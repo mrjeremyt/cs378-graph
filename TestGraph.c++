@@ -76,9 +76,6 @@ To document the program:
                         typedef typename TestFixture::edges_size_type    edges_size_type;
 
 
-
-
-
 // ---------
 // TestGraph
 // ---------
