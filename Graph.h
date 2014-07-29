@@ -7,6 +7,8 @@
 #ifndef Graph_h
 #define Graph_h
 
+using namespace std;
+
 // --------
 // includes
 // --------
@@ -182,7 +184,7 @@ class Graph {
         // data
         // ----
 
-        std::vector< std::vector<vertex_descriptor> > g; // something like this
+        vector< vector<vertex_descriptor> > g; // something like this
 
         // -----
         // valid
