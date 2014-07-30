@@ -1,0 +1,110 @@
+        -:    0:Source:/usr/include/boost/graph/adjacency_iterator.hpp
+        -:    0:Programs:1
+        -:    1://=======================================================================
+        -:    2:// Copyright 2002 Indiana University.
+        -:    3:// Authors: Andrew Lumsdaine, Lie-Quan Lee, Jeremy G. Siek
+        -:    4://
+        -:    5:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    6:// accompanying file LICENSE_1_0.txt or copy at
+        -:    7:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    8://=======================================================================
+        -:    9:
+        -:   10:#ifndef BOOST_ADJACENCY_ITERATOR_HPP
+        -:   11:#define BOOST_ADJACENCY_ITERATOR_HPP
+        -:   12:
+        -:   13:#include <boost/iterator/iterator_adaptor.hpp>
+        -:   14:#include <boost/graph/graph_traits.hpp>
+        -:   15:
+        -:   16:namespace boost
+        -:   17:{
+        -:   18:
+        -:   19:  template <class Graph, class Vertex, class OutEdgeIter, class Difference>
+        -:   20:  struct adjacency_iterator
+        -:   21:    : iterator_adaptor<
+        -:   22:          adjacency_iterator<Graph,Vertex,OutEdgeIter,Difference>
+        -:   23:        , OutEdgeIter
+        -:   24:        , Vertex
+        -:   25:        , use_default
+        -:   26:        , Vertex
+        -:   27:        , Difference
+        -:   28:      >
+        -:   29:  {
+        -:   30:      typedef iterator_adaptor<
+        -:   31:          adjacency_iterator<Graph,Vertex,OutEdgeIter,Difference>
+        -:   32:        , OutEdgeIter
+        -:   33:        , Vertex
+        -:   34:        , use_default
+        -:   35:        , Vertex
+        -:   36:        , Difference
+        -:   37:      > super_t;
+        -:   38:      
+        -:   39:      inline adjacency_iterator() {}
+function _ZN5boost18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES5_S5_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS8_4sep_ImS5_EEEmNS8_14edge_desc_implINS_12directed_tagEmEElEElEC2ERKSH_PKS7_ called 24 returned 100% blocks executed 100%
+       24:   40:      inline adjacency_iterator(OutEdgeIter const& i, const Graph* g) : super_t(i), m_g(g) { }
+call    0 returned 100%
+        -:   41:
+        -:   42:      inline Vertex
+function _ZNK5boost18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES5_S5_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS8_4sep_ImS5_EEEmNS8_14edge_desc_implINS_12directed_tagEmEElEElE11dereferenceEv called 32 returned 100% blocks executed 100%
+       32:   43:      dereference() const
+       32:   44:        { return target(*this->base(), *m_g); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+        -:   45:
+        -:   46:      const Graph* m_g;
+        -:   47:  };
+        -:   48:
+        -:   49:  template <class Graph,
+        -:   50:            class Vertex = typename graph_traits<Graph>::vertex_descriptor,
+        -:   51:            class OutEdgeIter=typename graph_traits<Graph>::out_edge_iterator>
+        -:   52:  class adjacency_iterator_generator
+        -:   53:  {
+        -:   54:    typedef typename boost::detail::iterator_traits<OutEdgeIter>
+        -:   55:      ::difference_type difference_type;
+        -:   56:  public:
+        -:   57:      typedef adjacency_iterator<Graph,Vertex,OutEdgeIter,difference_type> type;
+        -:   58:  };
+        -:   59:
+        -:   60:  template <class Graph, class Vertex, class InEdgeIter, class Difference>
+        -:   61:  struct inv_adjacency_iterator
+        -:   62:    : iterator_adaptor<
+        -:   63:          inv_adjacency_iterator<Graph,Vertex,InEdgeIter,Difference>
+        -:   64:        , InEdgeIter
+        -:   65:        , Vertex
+        -:   66:        , use_default
+        -:   67:        , Vertex
+        -:   68:        , Difference
+        -:   69:      >
+        -:   70:    {
+        -:   71:      typedef iterator_adaptor<
+        -:   72:                  inv_adjacency_iterator<Graph,Vertex,InEdgeIter,Difference>
+        -:   73:                , InEdgeIter
+        -:   74:                , Vertex
+        -:   75:                , use_default
+        -:   76:                , Vertex
+        -:   77:                , Difference
+        -:   78:              > super_t;
+        -:   79:
+        -:   80:      inline inv_adjacency_iterator() { }
+        -:   81:      inline inv_adjacency_iterator(InEdgeIter const& i, const Graph* g) : super_t(i), m_g(g) { }
+        -:   82:
+        -:   83:      inline Vertex
+        -:   84:      dereference() const
+        -:   85:        { return source(*this->base(), *m_g); }
+        -:   86:
+        -:   87:      const Graph* m_g;
+        -:   88:    };
+        -:   89:
+        -:   90:  template <class Graph,
+        -:   91:            class Vertex = typename graph_traits<Graph>::vertex_descriptor,
+        -:   92:            class InEdgeIter = typename graph_traits<Graph>::in_edge_iterator>
+        -:   93:  class inv_adjacency_iterator_generator {
+        -:   94:    typedef typename boost::detail::iterator_traits<InEdgeIter>
+        -:   95:      ::difference_type difference_type;
+        -:   96:  public:
+        -:   97:      typedef inv_adjacency_iterator<Graph, Vertex, InEdgeIter, difference_type> type;
+        -:   98:  };
+        -:   99:
+        -:  100:} // namespace boost
+        -:  101:
+        -:  102:#endif // BOOST_DETAIL_ADJACENCY_ITERATOR_HPP

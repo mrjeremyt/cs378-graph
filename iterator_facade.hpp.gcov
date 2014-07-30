@@ -1,0 +1,960 @@
+        -:    0:Source:/usr/include/boost/iterator/iterator_facade.hpp
+        -:    0:Programs:1
+        -:    1:// (C) Copyright David Abrahams 2002.
+        -:    2:// (C) Copyright Jeremy Siek    2002.
+        -:    3:// (C) Copyright Thomas Witt    2002.
+        -:    4:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    5:// accompanying file LICENSE_1_0.txt or copy at
+        -:    6:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    7:#ifndef BOOST_ITERATOR_FACADE_23022003THW_HPP
+        -:    8:#define BOOST_ITERATOR_FACADE_23022003THW_HPP
+        -:    9:
+        -:   10:#include <boost/iterator.hpp>
+        -:   11:#include <boost/iterator/interoperable.hpp>
+        -:   12:#include <boost/iterator/iterator_traits.hpp>
+        -:   13:
+        -:   14:#include <boost/iterator/detail/facade_iterator_category.hpp>
+        -:   15:#include <boost/iterator/detail/enable_if.hpp>
+        -:   16:
+        -:   17:#include <boost/implicit_cast.hpp>
+        -:   18:#include <boost/static_assert.hpp>
+        -:   19:
+        -:   20:#include <boost/type_traits/is_same.hpp>
+        -:   21:#include <boost/type_traits/add_const.hpp>
+        -:   22:#include <boost/type_traits/add_pointer.hpp>
+        -:   23:#include <boost/type_traits/remove_const.hpp>
+        -:   24:#include <boost/type_traits/remove_reference.hpp>
+        -:   25:#include <boost/type_traits/is_convertible.hpp>
+        -:   26:#include <boost/type_traits/is_pod.hpp>
+        -:   27:
+        -:   28:#include <boost/mpl/eval_if.hpp>
+        -:   29:#include <boost/mpl/if.hpp>
+        -:   30:#include <boost/mpl/or.hpp>
+        -:   31:#include <boost/mpl/and.hpp>
+        -:   32:#include <boost/mpl/not.hpp>
+        -:   33:#include <boost/mpl/always.hpp>
+        -:   34:#include <boost/mpl/apply.hpp>
+        -:   35:#include <boost/mpl/identity.hpp>
+        -:   36:
+        -:   37:#include <boost/iterator/detail/config_def.hpp> // this goes last
+        -:   38:
+        -:   39:namespace boost
+        -:   40:{
+        -:   41:  // This forward declaration is required for the friend declaration
+        -:   42:  // in iterator_core_access
+        -:   43:  template <class I, class V, class TC, class R, class D> class iterator_facade;
+        -:   44:
+        -:   45:  namespace detail
+        -:   46:  {
+        -:   47:    // A binary metafunction class that always returns bool.  VC6
+        -:   48:    // ICEs on mpl::always<bool>, probably because of the default
+        -:   49:    // parameters.
+        -:   50:    struct always_bool2
+        -:   51:    {
+        -:   52:        template <class T, class U>
+        -:   53:        struct apply
+        -:   54:        {
+        -:   55:            typedef bool type;
+        -:   56:        };
+        -:   57:    };
+        -:   58:
+        -:   59:    //
+        -:   60:    // enable if for use in operator implementation.
+        -:   61:    //
+        -:   62:    template <
+        -:   63:        class Facade1
+        -:   64:      , class Facade2
+        -:   65:      , class Return
+        -:   66:    >
+        -:   67:    struct enable_if_interoperable
+        -:   68:#if BOOST_WORKAROUND(BOOST_MSVC, <= 1300)
+        -:   69:    {
+        -:   70:        typedef typename mpl::if_<
+        -:   71:            mpl::or_<
+        -:   72:                is_convertible<Facade1, Facade2>
+        -:   73:              , is_convertible<Facade2, Facade1>
+        -:   74:            >
+        -:   75:          , Return
+        -:   76:          , int[3]
+        -:   77:        >::type type;
+        -:   78:    };        
+        -:   79:#else
+        -:   80:      : ::boost::iterators::enable_if<
+        -:   81:           mpl::or_<
+        -:   82:               is_convertible<Facade1, Facade2>
+        -:   83:             , is_convertible<Facade2, Facade1>
+        -:   84:           >
+        -:   85:         , Return
+        -:   86:        >
+        -:   87:    {};
+        -:   88:#endif 
+        -:   89:
+        -:   90:    //
+        -:   91:    // Generates associated types for an iterator_facade with the
+        -:   92:    // given parameters.
+        -:   93:    //
+        -:   94:    template <
+        -:   95:        class ValueParam
+        -:   96:      , class CategoryOrTraversal
+        -:   97:      , class Reference 
+        -:   98:      , class Difference
+        -:   99:    >
+        -:  100:    struct iterator_facade_types
+        -:  101:    {
+        -:  102:        typedef typename facade_iterator_category<
+        -:  103:            CategoryOrTraversal, ValueParam, Reference
+        -:  104:        >::type iterator_category;
+        -:  105:        
+        -:  106:        typedef typename remove_const<ValueParam>::type value_type;
+        -:  107:        
+        -:  108:        // Not the real associated pointer type
+        -:  109:        typedef typename mpl::eval_if<
+        -:  110:            boost::detail::iterator_writability_disabled<ValueParam,Reference>
+        -:  111:          , add_pointer<const value_type>
+        -:  112:          , add_pointer<value_type>
+        -:  113:        >::type pointer;
+        -:  114:      
+        -:  115:# if defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)                          \
+        -:  116:    && (BOOST_WORKAROUND(_STLPORT_VERSION, BOOST_TESTED_AT(0x452))              \
+        -:  117:        || BOOST_WORKAROUND(BOOST_DINKUMWARE_STDLIB, BOOST_TESTED_AT(310)))     \
+        -:  118:    || BOOST_WORKAROUND(BOOST_RWSTD_VER, BOOST_TESTED_AT(0x20101))              \
+        -:  119:    || BOOST_WORKAROUND(BOOST_DINKUMWARE_STDLIB, <= 310)
+        -:  120:
+        -:  121:        // To interoperate with some broken library/compiler
+        -:  122:        // combinations, user-defined iterators must be derived from
+        -:  123:        // std::iterator.  It is possible to implement a standard
+        -:  124:        // library for broken compilers without this limitation.
+        -:  125:#  define BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE 1
+        -:  126:
+        -:  127:        typedef
+        -:  128:           iterator<iterator_category, value_type, Difference, pointer, Reference>
+        -:  129:        base;
+        -:  130:# endif
+        -:  131:    };
+        -:  132:
+        -:  133:    // iterators whose dereference operators reference the same value
+        -:  134:    // for all iterators into the same sequence (like many input
+        -:  135:    // iterators) need help with their postfix ++: the referenced
+        -:  136:    // value must be read and stored away before the increment occurs
+        -:  137:    // so that *a++ yields the originally referenced element and not
+        -:  138:    // the next one.
+        -:  139:    template <class Iterator>
+        -:  140:    class postfix_increment_proxy
+        -:  141:    {
+        -:  142:        typedef typename iterator_value<Iterator>::type value_type;
+        -:  143:     public:
+        -:  144:        explicit postfix_increment_proxy(Iterator const& x)
+        -:  145:          : stored_value(*x)
+        -:  146:        {}
+        -:  147:
+        -:  148:        // Returning a mutable reference allows nonsense like
+        -:  149:        // (*r++).mutate(), but it imposes fewer assumptions about the
+        -:  150:        // behavior of the value_type.  In particular, recall taht
+        -:  151:        // (*r).mutate() is legal if operator* returns by value.
+        -:  152:        value_type&
+        -:  153:        operator*() const
+        -:  154:        {
+        -:  155:            return this->stored_value;
+        -:  156:        }
+        -:  157:     private:
+        -:  158:        mutable value_type stored_value;
+        -:  159:    };
+        -:  160:    
+        -:  161:    //
+        -:  162:    // In general, we can't determine that such an iterator isn't
+        -:  163:    // writable -- we also need to store a copy of the old iterator so
+        -:  164:    // that it can be written into.
+        -:  165:    template <class Iterator>
+        -:  166:    class writable_postfix_increment_proxy
+        -:  167:    {
+        -:  168:        typedef typename iterator_value<Iterator>::type value_type;
+        -:  169:     public:
+        -:  170:        explicit writable_postfix_increment_proxy(Iterator const& x)
+        -:  171:          : stored_value(*x)
+        -:  172:          , stored_iterator(x)
+        -:  173:        {}
+        -:  174:
+        -:  175:        // Dereferencing must return a proxy so that both *r++ = o and
+        -:  176:        // value_type(*r++) can work.  In this case, *r is the same as
+        -:  177:        // *r++, and the conversion operator below is used to ensure
+        -:  178:        // readability.
+        -:  179:        writable_postfix_increment_proxy const&
+        -:  180:        operator*() const
+        -:  181:        {
+        -:  182:            return *this;
+        -:  183:        }
+        -:  184:
+        -:  185:        // Provides readability of *r++
+        -:  186:        operator value_type&() const
+        -:  187:        {
+        -:  188:            return stored_value;
+        -:  189:        }
+        -:  190:
+        -:  191:        // Provides writability of *r++
+        -:  192:        template <class T>
+        -:  193:        T const& operator=(T const& x) const
+        -:  194:        {
+        -:  195:            *this->stored_iterator = x;
+        -:  196:            return x;
+        -:  197:        }
+        -:  198:
+        -:  199:        // This overload just in case only non-const objects are writable
+        -:  200:        template <class T>
+        -:  201:        T& operator=(T& x) const
+        -:  202:        {
+        -:  203:            *this->stored_iterator = x;
+        -:  204:            return x;
+        -:  205:        }
+        -:  206:
+        -:  207:        // Provides X(r++)
+        -:  208:        operator Iterator const&() const
+        -:  209:        {
+        -:  210:            return stored_iterator;
+        -:  211:        }
+        -:  212:        
+        -:  213:     private:
+        -:  214:        mutable value_type stored_value;
+        -:  215:        Iterator stored_iterator;
+        -:  216:    };
+        -:  217:
+        -:  218:# ifdef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  219:
+        -:  220:    template <class Reference, class Value>
+        -:  221:    struct is_non_proxy_reference_impl
+        -:  222:    {
+        -:  223:        static Reference r;
+        -:  224:        
+        -:  225:        template <class R>
+        -:  226:        static typename mpl::if_<
+        -:  227:            is_convertible<
+        -:  228:                R const volatile*
+        -:  229:              , Value const volatile*
+        -:  230:            >
+        -:  231:          , char[1]
+        -:  232:          , char[2]
+        -:  233:        >::type& helper(R const&);
+        -:  234:        
+        -:  235:        BOOST_STATIC_CONSTANT(bool, value = sizeof(helper(r)) == 1);
+        -:  236:    };
+        -:  237:        
+        -:  238:    template <class Reference, class Value>
+        -:  239:    struct is_non_proxy_reference
+        -:  240:      : mpl::bool_<
+        -:  241:            is_non_proxy_reference_impl<Reference, Value>::value
+        -:  242:        >
+        -:  243:    {};
+        -:  244:# else 
+        -:  245:    template <class Reference, class Value>
+        -:  246:    struct is_non_proxy_reference
+        -:  247:      : is_convertible<
+        -:  248:            typename remove_reference<Reference>::type
+        -:  249:            const volatile*
+        -:  250:          , Value const volatile*
+        -:  251:        >
+        -:  252:    {};
+        -:  253:# endif 
+        -:  254:        
+        -:  255:    // A metafunction to choose the result type of postfix ++
+        -:  256:    //
+        -:  257:    // Because the C++98 input iterator requirements say that *r++ has
+        -:  258:    // type T (value_type), implementations of some standard
+        -:  259:    // algorithms like lexicographical_compare may use constructions
+        -:  260:    // like:
+        -:  261:    //
+        -:  262:    //          *r++ < *s++
+        -:  263:    //
+        -:  264:    // If *r++ returns a proxy (as required if r is writable but not
+        -:  265:    // multipass), this sort of expression will fail unless the proxy
+        -:  266:    // supports the operator<.  Since there are any number of such
+        -:  267:    // operations, we're not going to try to support them.  Therefore,
+        -:  268:    // even if r++ returns a proxy, *r++ will only return a proxy if
+        -:  269:    // *r also returns a proxy.
+        -:  270:    template <class Iterator, class Value, class Reference, class CategoryOrTraversal>
+        -:  271:    struct postfix_increment_result
+        -:  272:      : mpl::eval_if<
+        -:  273:            mpl::and_<
+        -:  274:                // A proxy is only needed for readable iterators
+        -:  275:                is_convertible<Reference,Value const&>
+        -:  276:                
+        -:  277:                // No multipass iterator can have values that disappear
+        -:  278:                // before positions can be re-visited
+        -:  279:              , mpl::not_<
+        -:  280:                    is_convertible<
+        -:  281:                        typename iterator_category_to_traversal<CategoryOrTraversal>::type
+        -:  282:                      , forward_traversal_tag
+        -:  283:                    >
+        -:  284:                >
+        -:  285:            >
+        -:  286:          , mpl::if_<
+        -:  287:                is_non_proxy_reference<Reference,Value>
+        -:  288:              , postfix_increment_proxy<Iterator>
+        -:  289:              , writable_postfix_increment_proxy<Iterator>
+        -:  290:            >
+        -:  291:          , mpl::identity<Iterator>
+        -:  292:        >
+        -:  293:    {};
+        -:  294:
+        -:  295:    // operator->() needs special support for input iterators to strictly meet the
+        -:  296:    // standard's requirements. If *i is not a reference type, we must still
+        -:  297:    // produce a lvalue to which a pointer can be formed. We do that by
+        -:  298:    // returning an instantiation of this special proxy class template.
+        -:  299:    template <class T>
+        -:  300:    struct operator_arrow_proxy
+        -:  301:    {
+        -:  302:        operator_arrow_proxy(T const* px) : m_value(*px) {}
+        -:  303:        T* operator->() const { return &m_value; }
+        -:  304:        // This function is needed for MWCW and BCC, which won't call operator->
+        -:  305:        // again automatically per 13.3.1.2 para 8
+        -:  306:        operator T*() const { return &m_value; }
+        -:  307:        mutable T m_value;
+        -:  308:    };
+        -:  309:
+        -:  310:    // A metafunction that gets the result type for operator->.  Also
+        -:  311:    // has a static function make() which builds the result from a
+        -:  312:    // Reference
+        -:  313:    template <class ValueType, class Reference, class Pointer>
+        -:  314:    struct operator_arrow_result
+        -:  315:    {
+        -:  316:        // CWPro8.3 won't accept "operator_arrow_result::type", and we
+        -:  317:        // need that type below, so metafunction forwarding would be a
+        -:  318:        // losing proposition here.
+        -:  319:        typedef typename mpl::if_<
+        -:  320:            is_reference<Reference>
+        -:  321:          , Pointer
+        -:  322:          , operator_arrow_proxy<ValueType>
+        -:  323:        >::type type;
+        -:  324:
+        -:  325:        static type make(Reference x)
+        -:  326:        {
+        -:  327:            return boost::implicit_cast<type>(&x);
+        -:  328:        }
+        -:  329:    };
+        -:  330:
+        -:  331:# if BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  332:    // Deal with ETI
+        -:  333:    template<>
+        -:  334:    struct operator_arrow_result<int, int, int>
+        -:  335:    {
+        -:  336:        typedef int type;
+        -:  337:    };
+        -:  338:# endif
+        -:  339:
+        -:  340:    // A proxy return type for operator[], needed to deal with
+        -:  341:    // iterators that may invalidate referents upon destruction.
+        -:  342:    // Consider the temporary iterator in *(a + n)
+        -:  343:    template <class Iterator>
+        -:  344:    class operator_brackets_proxy
+        -:  345:    {
+        -:  346:        // Iterator is actually an iterator_facade, so we do not have to
+        -:  347:        // go through iterator_traits to access the traits.
+        -:  348:        typedef typename Iterator::reference  reference;
+        -:  349:        typedef typename Iterator::value_type value_type;
+        -:  350:
+        -:  351:     public:
+        -:  352:        operator_brackets_proxy(Iterator const& iter)
+        -:  353:          : m_iter(iter)
+        -:  354:        {}
+        -:  355:
+        -:  356:        operator reference() const
+        -:  357:        {
+        -:  358:            return *m_iter;
+        -:  359:        }
+        -:  360:
+        -:  361:        operator_brackets_proxy& operator=(value_type const& val)
+        -:  362:        {
+        -:  363:            *m_iter = val;
+        -:  364:            return *this;
+        -:  365:        }
+        -:  366:
+        -:  367:     private:
+        -:  368:        Iterator m_iter;
+        -:  369:    };
+        -:  370:
+        -:  371:    // A metafunction that determines whether operator[] must return a
+        -:  372:    // proxy, or whether it can simply return a copy of the value_type.
+        -:  373:    template <class ValueType, class Reference>
+        -:  374:    struct use_operator_brackets_proxy
+        -:  375:      : mpl::not_<
+        -:  376:            mpl::and_<
+        -:  377:                // Really we want an is_copy_constructible trait here,
+        -:  378:                // but is_POD will have to suffice in the meantime.
+        -:  379:                boost::is_POD<ValueType>
+        -:  380:              , iterator_writability_disabled<ValueType,Reference>
+        -:  381:            >
+        -:  382:        >
+        -:  383:    {};
+        -:  384:        
+        -:  385:    template <class Iterator, class Value, class Reference>
+        -:  386:    struct operator_brackets_result
+        -:  387:    {
+        -:  388:        typedef typename mpl::if_<
+        -:  389:            use_operator_brackets_proxy<Value,Reference>
+        -:  390:          , operator_brackets_proxy<Iterator>
+        -:  391:          , Value
+        -:  392:        >::type type;
+        -:  393:    };
+        -:  394:
+        -:  395:    template <class Iterator>
+        -:  396:    operator_brackets_proxy<Iterator> make_operator_brackets_result(Iterator const& iter, mpl::true_)
+        -:  397:    {
+        -:  398:        return operator_brackets_proxy<Iterator>(iter);
+        -:  399:    }
+        -:  400:
+        -:  401:    template <class Iterator>
+        -:  402:    typename Iterator::value_type make_operator_brackets_result(Iterator const& iter, mpl::false_)
+        -:  403:    {
+        -:  404:      return *iter;
+        -:  405:    }
+        -:  406:
+        -:  407:    struct choose_difference_type
+        -:  408:    {
+        -:  409:        template <class I1, class I2>
+        -:  410:        struct apply
+        -:  411:          :
+        -:  412:# ifdef BOOST_NO_ONE_WAY_ITERATOR_INTEROP
+        -:  413:          iterator_difference<I1>
+        -:  414:# elif BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  415:          mpl::if_<
+        -:  416:              is_convertible<I2,I1>
+        -:  417:            , typename I1::difference_type
+        -:  418:            , typename I2::difference_type
+        -:  419:          >
+        -:  420:# else 
+        -:  421:          mpl::eval_if<
+        -:  422:              is_convertible<I2,I1>
+        -:  423:            , iterator_difference<I1>
+        -:  424:            , iterator_difference<I2>
+        -:  425:          >
+        -:  426:# endif 
+        -:  427:        {};
+        -:  428:
+        -:  429:    };
+        -:  430:  } // namespace detail
+        -:  431:
+        -:  432:
+        -:  433:  // Macros which describe the declarations of binary operators
+        -:  434:# ifdef BOOST_NO_STRICT_ITERATOR_INTEROPERABILITY
+        -:  435:#  define BOOST_ITERATOR_FACADE_INTEROP_HEAD(prefix, op, result_type)       \
+        -:  436:    template <                                                              \
+        -:  437:        class Derived1, class V1, class TC1, class Reference1, class Difference1 \
+        -:  438:      , class Derived2, class V2, class TC2, class Reference2, class Difference2 \
+        -:  439:    >                                                                       \
+        -:  440:    prefix typename mpl::apply2<result_type,Derived1,Derived2>::type \
+        -:  441:    operator op(                                                            \
+        -:  442:        iterator_facade<Derived1, V1, TC1, Reference1, Difference1> const& lhs   \
+        -:  443:      , iterator_facade<Derived2, V2, TC2, Reference2, Difference2> const& rhs)
+        -:  444:# else 
+        -:  445:#  define BOOST_ITERATOR_FACADE_INTEROP_HEAD(prefix, op, result_type)   \
+        -:  446:    template <                                                          \
+        -:  447:        class Derived1, class V1, class TC1, class Reference1, class Difference1 \
+        -:  448:      , class Derived2, class V2, class TC2, class Reference2, class Difference2 \
+        -:  449:    >                                                                   \
+        -:  450:    prefix typename boost::detail::enable_if_interoperable<             \
+        -:  451:        Derived1, Derived2                                              \
+        -:  452:      , typename mpl::apply2<result_type,Derived1,Derived2>::type       \
+        -:  453:    >::type                                                             \
+        -:  454:    operator op(                                                        \
+        -:  455:        iterator_facade<Derived1, V1, TC1, Reference1, Difference1> const& lhs   \
+        -:  456:      , iterator_facade<Derived2, V2, TC2, Reference2, Difference2> const& rhs)
+        -:  457:# endif 
+        -:  458:
+        -:  459:#  define BOOST_ITERATOR_FACADE_PLUS_HEAD(prefix,args)              \
+        -:  460:    template <class Derived, class V, class TC, class R, class D>   \
+        -:  461:    prefix Derived operator+ args
+        -:  462:
+        -:  463:  //
+        -:  464:  // Helper class for granting access to the iterator core interface.
+        -:  465:  //
+        -:  466:  // The simple core interface is used by iterator_facade. The core
+        -:  467:  // interface of a user/library defined iterator type should not be made public
+        -:  468:  // so that it does not clutter the public interface. Instead iterator_core_access
+        -:  469:  // should be made friend so that iterator_facade can access the core
+        -:  470:  // interface through iterator_core_access.
+        -:  471:  //
+        -:  472:  class iterator_core_access
+        -:  473:  {
+        -:  474:# if defined(BOOST_NO_MEMBER_TEMPLATE_FRIENDS)                  
+        -:  475:      // Tasteless as this may seem, making all members public allows member templates
+        -:  476:      // to work in the absence of member template friends.
+        -:  477:   public:
+        -:  478:# else
+        -:  479:      
+        -:  480:      template <class I, class V, class TC, class R, class D> friend class iterator_facade;
+        -:  481:
+        -:  482:#  define BOOST_ITERATOR_FACADE_RELATION(op)                                \
+        -:  483:      BOOST_ITERATOR_FACADE_INTEROP_HEAD(friend,op, boost::detail::always_bool2);
+        -:  484:
+        -:  485:      BOOST_ITERATOR_FACADE_RELATION(==)
+        -:  486:      BOOST_ITERATOR_FACADE_RELATION(!=)
+        -:  487:
+        -:  488:      BOOST_ITERATOR_FACADE_RELATION(<)
+        -:  489:      BOOST_ITERATOR_FACADE_RELATION(>)
+        -:  490:      BOOST_ITERATOR_FACADE_RELATION(<=)
+        -:  491:      BOOST_ITERATOR_FACADE_RELATION(>=)
+        -:  492:#  undef BOOST_ITERATOR_FACADE_RELATION
+        -:  493:
+        -:  494:      BOOST_ITERATOR_FACADE_INTEROP_HEAD(
+        -:  495:          friend, -, boost::detail::choose_difference_type)
+        -:  496:      ;
+        -:  497:
+        -:  498:      BOOST_ITERATOR_FACADE_PLUS_HEAD(
+        -:  499:          friend inline
+        -:  500:          , (iterator_facade<Derived, V, TC, R, D> const&
+        -:  501:           , typename Derived::difference_type)
+        -:  502:      )
+        -:  503:      ;
+        -:  504:
+        -:  505:      BOOST_ITERATOR_FACADE_PLUS_HEAD(
+        -:  506:          friend inline
+        -:  507:        , (typename Derived::difference_type
+        -:  508:           , iterator_facade<Derived, V, TC, R, D> const&)
+        -:  509:      )
+        -:  510:      ;
+        -:  511:
+        -:  512:# endif
+        -:  513:
+        -:  514:      template <class Facade>
+function _ZN5boost20iterator_core_access11dereferenceINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEEEENT_9referenceERKSD_ called 76 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access11dereferenceINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES7_S7_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINSA_4sep_ImS7_EEEmNSA_14edge_desc_implINS_12directed_tagEmEElEElEEEENT_9referenceERKSL_ called 32 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access11dereferenceINS_12range_detail16integer_iteratorImEEEENT_9referenceERKS5_ called 4152 returned 100% blocks executed 100%
+     4260:  515:      static typename Facade::reference dereference(Facade const& f)
+        -:  516:      {
+     4260:  517:          return f.dereference();
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+        -:  518:      }
+        -:  519:
+        -:  520:      template <class Facade>
+function _ZN5boost20iterator_core_access9incrementINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEEEEvRT_ called 76 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access9incrementINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES7_S7_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINSA_4sep_ImS7_EEEmNSA_14edge_desc_implINS_12directed_tagEmEElEElEEEEvRT_ called 32 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access9incrementINS_12range_detail16integer_iteratorImEEEEvRT_ called 4124 returned 100% blocks executed 100%
+     4232:  521:      static void increment(Facade& f)
+        -:  522:      {
+     4232:  523:          f.increment();
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+     4232:  524:      }
+        -:  525:
+        -:  526:      template <class Facade>
+        -:  527:      static void decrement(Facade& f)
+        -:  528:      {
+        -:  529:          f.decrement();
+        -:  530:      }
+        -:  531:
+        -:  532:      template <class Facade1, class Facade2>
+function _ZN5boost20iterator_core_access5equalINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES7_S7_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINSA_4sep_ImS7_EEEmNSA_14edge_desc_implINS_12directed_tagEmEElEElEESK_EEbRKT_RKT0_N4mpl_5bool_ILb1EEE called 44 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access5equalINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEbRKT_RKT0_N4mpl_5bool_ILb1EEE called 88 returned 100% blocks executed 100%
+function _ZN5boost20iterator_core_access5equalINS_12range_detail16integer_iteratorImEES4_EEbRKT_RKT0_N4mpl_5bool_ILb1EEE called 4304 returned 100% blocks executed 100%
+     4436:  533:      static bool equal(Facade1 const& f1, Facade2 const& f2, mpl::true_)
+        -:  534:      {
+     4436:  535:          return f1.equal(f2);
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+        -:  536:      }
+        -:  537:
+        -:  538:      template <class Facade1, class Facade2>
+        -:  539:      static bool equal(Facade1 const& f1, Facade2 const& f2, mpl::false_)
+        -:  540:      {
+        -:  541:          return f2.equal(f1);
+        -:  542:      }
+        -:  543:
+        -:  544:      template <class Facade>
+        -:  545:      static void advance(Facade& f, typename Facade::difference_type n)
+        -:  546:      {
+        -:  547:          f.advance(n);
+        -:  548:      }
+        -:  549:
+        -:  550:      template <class Facade1, class Facade2>
+function _ZN5boost20iterator_core_access13distance_fromINS_12range_detail16integer_iteratorImEES4_EENT_15difference_typeERKS5_RKT0_N4mpl_5bool_ILb1EEE called 60248 returned 100% blocks executed 100%
+    60248:  551:      static typename Facade1::difference_type distance_from(
+        -:  552:          Facade1 const& f1, Facade2 const& f2, mpl::true_)
+        -:  553:      {
+    60248:  554:          return -f1.distance_to(f2);
+call    0 returned 100%
+        -:  555:      }
+        -:  556:
+        -:  557:      template <class Facade1, class Facade2>
+        -:  558:      static typename Facade2::difference_type distance_from(
+        -:  559:          Facade1 const& f1, Facade2 const& f2, mpl::false_)
+        -:  560:      {
+        -:  561:          return f2.distance_to(f1);
+        -:  562:      }
+        -:  563:
+        -:  564:      //
+        -:  565:      // Curiously Recurring Template interface.
+        -:  566:      //
+        -:  567:      template <class I, class V, class TC, class R, class D>
+        -:  568:      static I& derived(iterator_facade<I,V,TC,R,D>& facade)
+        -:  569:      {
+        -:  570:          return *static_cast<I*>(&facade);
+        -:  571:      }
+        -:  572:
+        -:  573:      template <class I, class V, class TC, class R, class D>
+        -:  574:      static I const& derived(iterator_facade<I,V,TC,R,D> const& facade)
+        -:  575:      {
+        -:  576:          return *static_cast<I const*>(&facade);
+        -:  577:      }
+        -:  578:
+        -:  579:   private:
+        -:  580:      // objects of this class are useless
+        -:  581:      iterator_core_access(); //undefined
+        -:  582:  };
+        -:  583:
+        -:  584:  //
+        -:  585:  // iterator_facade - use as a public base class for defining new
+        -:  586:  // standard-conforming iterators.
+        -:  587:  //
+        -:  588:  template <
+        -:  589:      class Derived             // The derived iterator type being constructed
+        -:  590:    , class Value
+        -:  591:    , class CategoryOrTraversal
+        -:  592:    , class Reference   = Value&
+        -:  593:    , class Difference  = std::ptrdiff_t
+        -:  594:  >
+function _ZN5boost15iterator_facadeINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlEC2Ev called 24 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lEC2Ev called 104 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlEC2Ev called 120832 returned 100% blocks executed 100%
+   120960:  595:  class iterator_facade
+        -:  596:# ifdef BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE
+        -:  597:    : public boost::detail::iterator_facade_types<
+        -:  598:         Value, CategoryOrTraversal, Reference, Difference
+        -:  599:      >::base
+        -:  600:#  undef BOOST_ITERATOR_FACADE_NEEDS_ITERATOR_BASE
+        -:  601:# endif
+        -:  602:  {
+        -:  603:   private:
+        -:  604:      //
+        -:  605:      // Curiously Recurring Template interface.
+        -:  606:      //
+function _ZN5boost15iterator_facadeINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lE7derivedEv called 152 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlE7derivedEv called 64 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlE7derivedEv called 8248 returned 100% blocks executed 100%
+     8464:  607:      Derived& derived()
+        -:  608:      {
+     8464:  609:          return *static_cast<Derived*>(this);
+        -:  610:      }
+        -:  611:
+function _ZNK5boost15iterator_facadeINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lE7derivedEv called 76 returned 100% blocks executed 100%
+function _ZNK5boost15iterator_facadeINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlE7derivedEv called 32 returned 100% blocks executed 100%
+function _ZNK5boost15iterator_facadeINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlE7derivedEv called 4152 returned 100% blocks executed 100%
+     4260:  612:      Derived const& derived() const
+        -:  613:      {
+     4260:  614:          return *static_cast<Derived const*>(this);
+        -:  615:      }
+        -:  616:
+        -:  617:      typedef boost::detail::iterator_facade_types<
+        -:  618:         Value, CategoryOrTraversal, Reference, Difference
+        -:  619:      > associated_types;
+        -:  620:
+        -:  621:      typedef boost::detail::operator_arrow_result<
+        -:  622:        typename associated_types::value_type
+        -:  623:        , Reference
+        -:  624:        , typename associated_types::pointer
+        -:  625:      > pointer_;
+        -:  626:
+        -:  627:   protected:
+        -:  628:      // For use by derived classes
+        -:  629:      typedef iterator_facade<Derived,Value,CategoryOrTraversal,Reference,Difference> iterator_facade_;
+        -:  630:      
+        -:  631:   public:
+        -:  632:
+        -:  633:      typedef typename associated_types::value_type value_type;
+        -:  634:      typedef Reference reference;
+        -:  635:      typedef Difference difference_type;
+        -:  636:
+        -:  637:      typedef typename pointer_::type pointer;
+        -:  638:
+        -:  639:      typedef typename associated_types::iterator_category iterator_category;
+        -:  640:
+function _ZNK5boost15iterator_facadeINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lEdeEv called 76 returned 100% blocks executed 100%
+function _ZNK5boost15iterator_facadeINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlEdeEv called 32 returned 100% blocks executed 100%
+function _ZNK5boost15iterator_facadeINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlEdeEv called 4152 returned 100% blocks executed 100%
+     4260:  641:      reference operator*() const
+        -:  642:      {
+     4260:  643:          return iterator_core_access::dereference(this->derived());
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+        -:  644:      }
+        -:  645:
+        -:  646:      pointer operator->() const
+        -:  647:      {
+        -:  648:          return pointer_::make(*this->derived());
+        -:  649:      }
+        -:  650:        
+        -:  651:      typename boost::detail::operator_brackets_result<Derived,Value,reference>::type
+        -:  652:      operator[](difference_type n) const
+        -:  653:      {
+        -:  654:          typedef boost::detail::use_operator_brackets_proxy<Value,Reference> use_proxy;
+        -:  655:          
+        -:  656:          return boost::detail::make_operator_brackets_result<Derived>(
+        -:  657:              this->derived() + n
+        -:  658:            , use_proxy()
+        -:  659:          );
+        -:  660:      }
+        -:  661:
+function _ZN5boost15iterator_facadeINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lEppEv called 76 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlEppEv called 32 returned 100% blocks executed 100%
+function _ZN5boost15iterator_facadeINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlEppEv called 4124 returned 100% blocks executed 100%
+     4232:  662:      Derived& operator++()
+        -:  663:      {
+     4232:  664:          iterator_core_access::increment(this->derived());
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+     4232:  665:          return this->derived();
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+        -:  666:      }
+        -:  667:
+        -:  668:# if BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  669:      typename boost::detail::postfix_increment_result<Derived,Value,Reference,CategoryOrTraversal>::type
+        -:  670:      operator++(int)
+        -:  671:      {
+        -:  672:          typename boost::detail::postfix_increment_result<Derived,Value,Reference,CategoryOrTraversal>::type
+        -:  673:          tmp(this->derived());
+        -:  674:          ++*this;
+        -:  675:          return tmp;
+        -:  676:      }
+        -:  677:# endif
+        -:  678:      
+        -:  679:      Derived& operator--()
+        -:  680:      {
+        -:  681:          iterator_core_access::decrement(this->derived());
+        -:  682:          return this->derived();
+        -:  683:      }
+        -:  684:
+        -:  685:      Derived operator--(int)
+        -:  686:      {
+        -:  687:          Derived tmp(this->derived());
+        -:  688:          --*this;
+        -:  689:          return tmp;
+        -:  690:      }
+        -:  691:
+        -:  692:      Derived& operator+=(difference_type n)
+        -:  693:      {
+        -:  694:          iterator_core_access::advance(this->derived(), n);
+        -:  695:          return this->derived();
+        -:  696:      }
+        -:  697:
+        -:  698:      Derived& operator-=(difference_type n)
+        -:  699:      {
+        -:  700:          iterator_core_access::advance(this->derived(), -n);
+        -:  701:          return this->derived();
+        -:  702:      }
+        -:  703:
+        -:  704:      Derived operator-(difference_type x) const
+        -:  705:      {
+        -:  706:          Derived result(this->derived());
+        -:  707:          return result -= x;
+        -:  708:      }
+        -:  709:
+        -:  710:# if BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  711:      // There appears to be a bug which trashes the data of classes
+        -:  712:      // derived from iterator_facade when they are assigned unless we
+        -:  713:      // define this assignment operator.  This bug is only revealed
+        -:  714:      // (so far) in STLPort debug mode, but it's clearly a codegen
+        -:  715:      // problem so we apply the workaround for all MSVC6.
+        -:  716:      iterator_facade& operator=(iterator_facade const&)
+        -:  717:      {
+        -:  718:          return *this;
+        -:  719:      }
+        -:  720:# endif
+        -:  721:  };
+        -:  722:
+        -:  723:# if !BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  724:  template <class I, class V, class TC, class R, class D>
+        -:  725:  inline typename boost::detail::postfix_increment_result<I,V,R,TC>::type
+        -:  726:  operator++(
+        -:  727:      iterator_facade<I,V,TC,R,D>& i
+        -:  728:    , int
+        -:  729:  )
+        -:  730:  {
+        -:  731:      typename boost::detail::postfix_increment_result<I,V,R,TC>::type
+        -:  732:          tmp(*static_cast<I*>(&i));
+        -:  733:      
+        -:  734:      ++i;
+        -:  735:      
+        -:  736:      return tmp;
+        -:  737:  }
+        -:  738:# endif 
+        -:  739:
+        -:  740:  
+        -:  741:  //
+        -:  742:  // Comparison operator implementation. The library supplied operators
+        -:  743:  // enables the user to provide fully interoperable constant/mutable
+        -:  744:  // iterator types. I.e. the library provides all operators
+        -:  745:  // for all mutable/constant iterator combinations.
+        -:  746:  //
+        -:  747:  // Note though that this kind of interoperability for constant/mutable
+        -:  748:  // iterators is not required by the standard for container iterators.
+        -:  749:  // All the standard asks for is a conversion mutable -> constant.
+        -:  750:  // Most standard library implementations nowadays provide fully interoperable
+        -:  751:  // iterator implementations, but there are still heavily used implementations
+        -:  752:  // that do not provide them. (Actually it's even worse, they do not provide
+        -:  753:  // them for only a few iterators.)
+        -:  754:  //
+        -:  755:  // ?? Maybe a BOOST_ITERATOR_NO_FULL_INTEROPERABILITY macro should
+        -:  756:  //    enable the user to turn off mixed type operators
+        -:  757:  //
+        -:  758:  // The library takes care to provide only the right operator overloads.
+        -:  759:  // I.e.
+        -:  760:  //
+        -:  761:  // bool operator==(Iterator,      Iterator);
+        -:  762:  // bool operator==(ConstIterator, Iterator);
+        -:  763:  // bool operator==(Iterator,      ConstIterator);
+        -:  764:  // bool operator==(ConstIterator, ConstIterator);
+        -:  765:  //
+        -:  766:  //   ...
+        -:  767:  //
+        -:  768:  // In order to do so it uses c++ idioms that are not yet widely supported
+        -:  769:  // by current compiler releases. The library is designed to degrade gracefully
+        -:  770:  // in the face of compiler deficiencies. In general compiler
+        -:  771:  // deficiencies result in less strict error checking and more obscure
+        -:  772:  // error messages, functionality is not affected.
+        -:  773:  //
+        -:  774:  // For full operation compiler support for "Substitution Failure Is Not An Error"
+        -:  775:  // (aka. enable_if) and boost::is_convertible is required.
+        -:  776:  //
+        -:  777:  // The following problems occur if support is lacking.
+        -:  778:  //
+        -:  779:  // Pseudo code
+        -:  780:  //
+        -:  781:  // ---------------
+        -:  782:  // AdaptorA<Iterator1> a1;
+        -:  783:  // AdaptorA<Iterator2> a2;
+        -:  784:  //
+        -:  785:  // // This will result in a no such overload error in full operation
+        -:  786:  // // If enable_if or is_convertible is not supported
+        -:  787:  // // The instantiation will fail with an error hopefully indicating that
+        -:  788:  // // there is no operator== for Iterator1, Iterator2
+        -:  789:  // // The same will happen if no enable_if is used to remove
+        -:  790:  // // false overloads from the templated conversion constructor
+        -:  791:  // // of AdaptorA.
+        -:  792:  //
+        -:  793:  // a1 == a2;
+        -:  794:  // ----------------
+        -:  795:  //
+        -:  796:  // AdaptorA<Iterator> a;
+        -:  797:  // AdaptorB<Iterator> b;
+        -:  798:  //
+        -:  799:  // // This will result in a no such overload error in full operation
+        -:  800:  // // If enable_if is not supported the static assert used
+        -:  801:  // // in the operator implementation will fail.
+        -:  802:  // // This will accidently work if is_convertible is not supported.
+        -:  803:  //
+        -:  804:  // a == b;
+        -:  805:  // ----------------
+        -:  806:  //
+        -:  807:
+        -:  808:# ifdef BOOST_NO_ONE_WAY_ITERATOR_INTEROP
+        -:  809:#  define BOOST_ITERATOR_CONVERTIBLE(a,b) mpl::true_()
+        -:  810:# else
+        -:  811:#  define BOOST_ITERATOR_CONVERTIBLE(a,b) is_convertible<a,b>()
+        -:  812:# endif
+        -:  813:
+        -:  814:# define BOOST_ITERATOR_FACADE_INTEROP(op, result_type, return_prefix, base_op) \
+        -:  815:  BOOST_ITERATOR_FACADE_INTEROP_HEAD(inline, op, result_type)                   \
+        -:  816:  {                                                                             \
+        -:  817:      /* For those compilers that do not support enable_if */                   \
+        -:  818:      BOOST_STATIC_ASSERT((                                                     \
+        -:  819:          is_interoperable< Derived1, Derived2 >::value                         \
+        -:  820:      ));                                                                       \
+        -:  821:      return_prefix iterator_core_access::base_op(                              \
+        -:  822:          *static_cast<Derived1 const*>(&lhs)                                   \
+        -:  823:        , *static_cast<Derived2 const*>(&rhs)                                   \
+        -:  824:        , BOOST_ITERATOR_CONVERTIBLE(Derived2,Derived1)                         \
+        -:  825:      );                                                                        \
+        -:  826:  }
+        -:  827:
+        -:  828:# define BOOST_ITERATOR_FACADE_RELATION(op, return_prefix, base_op) \
+        -:  829:  BOOST_ITERATOR_FACADE_INTEROP(                                    \
+        -:  830:      op                                                            \
+        -:  831:    , boost::detail::always_bool2                                   \
+        -:  832:    , return_prefix                                                 \
+        -:  833:    , base_op                                                       \
+        -:  834:  )
+        -:  835:
+function _ZN5boosteqINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEEmNS9_32iterator_category_with_traversalISt18input_iterator_tagNS_27bidirectional_traversal_tagEEEmlSJ_mSN_mlEENS9_23enable_if_interoperableIT_T4_NS_3mpl6apply2INS9_12always_bool2ESP_SQ_E4typeEE4typeERKNS_15iterator_facadeISP_T0_T1_T2_T3_EERKNSY_ISQ_T5_T6_T7_T8_EE called 44 returned 100% blocks executed 75%
+function _ZN5boosteqINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lSB_SA_SC_SA_lEENS1_23enable_if_interoperableIT_T4_NS_3mpl6apply2INS1_12always_bool2ESE_SF_E4typeEE4typeERKNS_15iterator_facadeISE_T0_T1_T2_T3_EERKNSN_ISF_T5_T6_T7_T8_EE called 88 returned 100% blocks executed 75%
+function _ZN5boosteqINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlS3_mS4_mlEENS_6detail23enable_if_interoperableIT_T4_NS_3mpl6apply2INS5_12always_bool2ES7_S8_E4typeEE4typeERKNS_15iterator_facadeIS7_T0_T1_T2_T3_EERKNSG_IS8_T5_T6_T7_T8_EE called 80 returned 100% blocks executed 75%
+      212:  836:  BOOST_ITERATOR_FACADE_RELATION(==, return, equal)
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 never executed
+branch  4 taken 100% (fallthrough)
+branch  5 taken 0% (throw)
+call    6 returned 100%
+call    7 never executed
+branch  8 taken 100% (fallthrough)
+branch  9 taken 0% (throw)
+call   10 returned 100%
+call   11 never executed
+function _ZN5boostneINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlS3_mS4_mlEENS_6detail23enable_if_interoperableIT_T4_NS_3mpl6apply2INS5_12always_bool2ES7_S8_E4typeEE4typeERKNS_15iterator_facadeIS7_T0_T1_T2_T3_EERKNSG_IS8_T5_T6_T7_T8_EE called 4224 returned 100% blocks executed 75%
+function _ZN5boostneINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEESA_NS_27bidirectional_traversal_tagESA_lSB_SA_SC_SA_lEENS1_23enable_if_interoperableIT_T4_NS_3mpl6apply2INS1_12always_bool2ESE_SF_E4typeEE4typeERKNS_15iterator_facadeISE_T0_T1_T2_T3_EERKNSN_ISF_T5_T6_T7_T8_EE called 0 returned 0% blocks executed 0%
+     4224:  837:  BOOST_ITERATOR_FACADE_RELATION(!=, return !, equal)
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+call    6 never executed
+call    7 never executed
+        -:  838:
+        -:  839:  BOOST_ITERATOR_FACADE_RELATION(<, return 0 >, distance_from)
+        -:  840:  BOOST_ITERATOR_FACADE_RELATION(>, return 0 <, distance_from)
+        -:  841:  BOOST_ITERATOR_FACADE_RELATION(<=, return 0 >=, distance_from)
+        -:  842:  BOOST_ITERATOR_FACADE_RELATION(>=, return 0 <=, distance_from)
+        -:  843:# undef BOOST_ITERATOR_FACADE_RELATION
+        -:  844:
+        -:  845:  // operator- requires an additional part in the static assertion
+function _ZN5boostmiINS_12range_detail16integer_iteratorImEEmNS_27random_access_traversal_tagEmlS3_mS4_mlEENS_6detail23enable_if_interoperableIT_T4_NS_3mpl6apply2INS5_22choose_difference_typeES7_S8_E4typeEE4typeERKNS_15iterator_facadeIS7_T0_T1_T2_T3_EERKNSG_IS8_T5_T6_T7_T8_EE called 60248 returned 100% blocks executed 75%
+    60248:  846:  BOOST_ITERATOR_FACADE_INTEROP(
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 never executed
+        -:  847:      -
+        -:  848:    , boost::detail::choose_difference_type
+        -:  849:    , return
+        -:  850:    , distance_from
+        -:  851:  )
+        -:  852:# undef BOOST_ITERATOR_FACADE_INTEROP
+        -:  853:# undef BOOST_ITERATOR_FACADE_INTEROP_HEAD
+        -:  854:
+        -:  855:# define BOOST_ITERATOR_FACADE_PLUS(args)           \
+        -:  856:  BOOST_ITERATOR_FACADE_PLUS_HEAD(inline, args)     \
+        -:  857:  {                                                 \
+        -:  858:      Derived tmp(static_cast<Derived const&>(i));  \
+        -:  859:      return tmp += n;                              \
+        -:  860:  }
+        -:  861:
+        -:  862:BOOST_ITERATOR_FACADE_PLUS((
+        -:  863:  iterator_facade<Derived, V, TC, R, D> const& i
+        -:  864:  , typename Derived::difference_type n
+        -:  865:))
+        -:  866:
+        -:  867:BOOST_ITERATOR_FACADE_PLUS((
+        -:  868:    typename Derived::difference_type n
+        -:  869:    , iterator_facade<Derived, V, TC, R, D> const& i
+        -:  870:))
+        -:  871:# undef BOOST_ITERATOR_FACADE_PLUS
+        -:  872:# undef BOOST_ITERATOR_FACADE_PLUS_HEAD
+        -:  873:
+        -:  874:} // namespace boost
+        -:  875:
+        -:  876:#include <boost/iterator/detail/config_undef.hpp>
+        -:  877:
+        -:  878:#endif // BOOST_ITERATOR_FACADE_23022003THW_HPP

@@ -1,0 +1,105 @@
+        -:    0:Source:/usr/include/boost/graph/exception.hpp
+        -:    0:Programs:1
+        -:    1://=======================================================================
+        -:    2:// Copyright 2002 Indiana University.
+        -:    3:// Authors: Andrew Lumsdaine, Lie-Quan Lee, Jeremy G. Siek
+        -:    4://
+        -:    5:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    6:// accompanying file LICENSE_1_0.txt or copy at
+        -:    7:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    8://=======================================================================
+        -:    9:
+        -:   10:#ifndef BOOST_GRAPH_EXCEPTION_HPP
+        -:   11:#define BOOST_GRAPH_EXCEPTION_HPP
+        -:   12:
+        -:   13:#include <stdexcept>
+        -:   14:#include <string>
+        -:   15:
+        -:   16:namespace boost {
+        -:   17:
+function _ZN5boost9bad_graphD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost9bad_graphD2Ev called 0 returned 0% blocks executed 0%
+    #####:   18:    struct bad_graph : public std::invalid_argument {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   19:        bad_graph(const std::string& what_arg)
+        -:   20:            : std::invalid_argument(what_arg) { }
+        -:   21:    };
+        -:   22:
+function _ZN5boost9not_a_dagD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost9not_a_dagD2Ev called 0 returned 0% blocks executed 0%
+    #####:   23:    struct not_a_dag : public bad_graph {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   24:        not_a_dag()
+        -:   25:            : bad_graph("The graph must be a DAG.")
+        -:   26:        { }
+        -:   27:    };
+        -:   28:
+function _ZN5boost13negative_edgeD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost13negative_edgeD2Ev called 0 returned 0% blocks executed 0%
+    #####:   29:    struct negative_edge : public bad_graph {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   30:        negative_edge()
+        -:   31:            : bad_graph("The graph may not contain an edge with negative weight.")
+        -:   32:        { }
+        -:   33:    };
+        -:   34:
+function _ZN5boost14negative_cycleD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost14negative_cycleD2Ev called 0 returned 0% blocks executed 0%
+    #####:   35:    struct negative_cycle : public bad_graph {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   36:        negative_cycle()
+        -:   37:            : bad_graph("The graph may not contain negative cycles.")
+        -:   38:        { }
+        -:   39:    };
+        -:   40:
+function _ZN5boost13not_connectedD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost13not_connectedD2Ev called 0 returned 0% blocks executed 0%
+    #####:   41:    struct not_connected : public bad_graph {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   42:        not_connected()
+        -:   43:            : bad_graph("The graph must be connected.")
+        -:   44:        { }
+        -:   45:    };
+        -:   46:
+function _ZN5boost12not_completeD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost12not_completeD2Ev called 0 returned 0% blocks executed 0%
+    #####:   47:   struct not_complete : public bad_graph {
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+        -:   48:       not_complete()
+        -:   49:           : bad_graph("The graph must be complete.")
+        -:   50:       { }
+        -:   51:   };
+        -:   52:
+        -:   53:} // namespace boost
+        -:   54:
+        -:   55:#endif // BOOST_GRAPH_EXCEPTION_HPP

@@ -1,0 +1,392 @@
+        -:    0:Source:/usr/include/boost/iterator/iterator_adaptor.hpp
+        -:    0:Programs:1
+        -:    1:// (C) Copyright David Abrahams 2002.
+        -:    2:// (C) Copyright Jeremy Siek    2002.
+        -:    3:// (C) Copyright Thomas Witt    2002.
+        -:    4:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    5:// accompanying file LICENSE_1_0.txt or copy at
+        -:    6:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    7:#ifndef BOOST_ITERATOR_ADAPTOR_23022003THW_HPP
+        -:    8:#define BOOST_ITERATOR_ADAPTOR_23022003THW_HPP
+        -:    9:
+        -:   10:#include <boost/static_assert.hpp>
+        -:   11:#include <boost/iterator.hpp>
+        -:   12:#include <boost/detail/iterator.hpp>
+        -:   13:
+        -:   14:#include <boost/iterator/iterator_categories.hpp>
+        -:   15:#include <boost/iterator/iterator_facade.hpp>
+        -:   16:#include <boost/iterator/detail/enable_if.hpp>
+        -:   17:
+        -:   18:#include <boost/mpl/and.hpp>
+        -:   19:#include <boost/mpl/not.hpp>
+        -:   20:#include <boost/mpl/or.hpp>
+        -:   21:
+        -:   22:#include <boost/type_traits/is_same.hpp>
+        -:   23:#include <boost/type_traits/is_convertible.hpp>
+        -:   24:
+        -:   25:#ifdef BOOST_ITERATOR_REF_CONSTNESS_KILLS_WRITABILITY
+        -:   26:# include <boost/type_traits/remove_reference.hpp>
+        -:   27:
+        -:   28:# if BOOST_WORKAROUND(__CODEGEARC__, BOOST_TESTED_AT(0x610))
+        -:   29:#   include <boost/type_traits/add_reference.hpp>
+        -:   30:# endif
+        -:   31:
+        -:   32:#else
+        -:   33:# include <boost/type_traits/add_reference.hpp>
+        -:   34:#endif
+        -:   35:
+        -:   36:#include <boost/iterator/detail/config_def.hpp>
+        -:   37:
+        -:   38:#include <boost/iterator/iterator_traits.hpp>
+        -:   39:
+        -:   40:namespace boost
+        -:   41:{
+        -:   42:  // Used as a default template argument internally, merely to
+        -:   43:  // indicate "use the default", this can also be passed by users
+        -:   44:  // explicitly in order to specify that the default should be used.
+        -:   45:  struct use_default;
+        -:   46:  
+        -:   47:# ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:   48:  // the incompleteness of use_default causes massive problems for
+        -:   49:  // is_convertible (naturally).  This workaround is fortunately not
+        -:   50:  // needed for vc6/vc7.
+        -:   51:  template<class To>
+        -:   52:  struct is_convertible<use_default,To>
+        -:   53:    : mpl::false_ {};
+        -:   54:# endif 
+        -:   55:  
+        -:   56:  namespace detail
+        -:   57:  {
+        -:   58:
+        -:   59:    // 
+        -:   60:    // Result type used in enable_if_convertible meta function.
+        -:   61:    // This can be an incomplete type, as only pointers to 
+        -:   62:    // enable_if_convertible< ... >::type are used.
+        -:   63:    // We could have used void for this, but conversion to
+        -:   64:    // void* is just to easy.
+        -:   65:    //
+        -:   66:    struct enable_type;
+        -:   67:  }
+        -:   68:
+        -:   69:
+        -:   70:  //
+        -:   71:  // enable_if for use in adapted iterators constructors.
+        -:   72:  //
+        -:   73:  // In order to provide interoperability between adapted constant and
+        -:   74:  // mutable iterators, adapted iterators will usually provide templated
+        -:   75:  // conversion constructors of the following form
+        -:   76:  //
+        -:   77:  // template <class BaseIterator>
+        -:   78:  // class adapted_iterator :
+        -:   79:  //   public iterator_adaptor< adapted_iterator<Iterator>, Iterator >
+        -:   80:  // {
+        -:   81:  // public:
+        -:   82:  //   
+        -:   83:  //   ...
+        -:   84:  //
+        -:   85:  //   template <class OtherIterator>
+        -:   86:  //   adapted_iterator(
+        -:   87:  //       OtherIterator const& it
+        -:   88:  //     , typename enable_if_convertible<OtherIterator, Iterator>::type* = 0);
+        -:   89:  //
+        -:   90:  //   ...
+        -:   91:  // };
+        -:   92:  //
+        -:   93:  // enable_if_convertible is used to remove those overloads from the overload
+        -:   94:  // set that cannot be instantiated. For all practical purposes only overloads
+        -:   95:  // for constant/mutable interaction will remain. This has the advantage that
+        -:   96:  // meta functions like boost::is_convertible do not return false positives,
+        -:   97:  // as they can only look at the signature of the conversion constructor
+        -:   98:  // and not at the actual instantiation.
+        -:   99:  //
+        -:  100:  // enable_if_interoperable can be safely used in user code. It falls back to
+        -:  101:  // always enabled for compilers that don't support enable_if or is_convertible. 
+        -:  102:  // There is no need for compiler specific workarounds in user code. 
+        -:  103:  //
+        -:  104:  // The operators implementation relies on boost::is_convertible not returning
+        -:  105:  // false positives for user/library defined iterator types. See comments
+        -:  106:  // on operator implementation for consequences.
+        -:  107:  //
+        -:  108:#  if BOOST_WORKAROUND(BOOST_MSVC, <= 1300)
+        -:  109:  
+        -:  110:  template<typename From, typename To>
+        -:  111:  struct enable_if_convertible
+        -:  112:  {
+        -:  113:     typedef typename mpl::if_<
+        -:  114:         mpl::or_<
+        -:  115:             is_same<From,To>
+        -:  116:           , is_convertible<From, To>
+        -:  117:         >
+        -:  118:      , boost::detail::enable_type
+        -:  119:      , int&
+        -:  120:     >::type type;
+        -:  121:  };
+        -:  122:  
+        -:  123:#  elif defined(BOOST_NO_IS_CONVERTIBLE) || defined(BOOST_NO_SFINAE)
+        -:  124:  
+        -:  125:  template <class From, class To>
+        -:  126:  struct enable_if_convertible
+        -:  127:  {
+        -:  128:      typedef boost::detail::enable_type type;
+        -:  129:  };
+        -:  130:  
+        -:  131:#  elif BOOST_WORKAROUND(_MSC_FULL_VER, BOOST_TESTED_AT(13102292)) && BOOST_MSVC > 1300
+        -:  132:  
+        -:  133:  // For some reason vc7.1 needs us to "cut off" instantiation
+        -:  134:  // of is_convertible in a few cases.
+        -:  135:  template<typename From, typename To>
+        -:  136:  struct enable_if_convertible
+        -:  137:    : iterators::enable_if<
+        -:  138:        mpl::or_<
+        -:  139:            is_same<From,To>
+        -:  140:          , is_convertible<From, To>
+        -:  141:        >
+        -:  142:      , boost::detail::enable_type
+        -:  143:    >
+        -:  144:  {};
+        -:  145:  
+        -:  146:#  else 
+        -:  147:  
+        -:  148:  template<typename From, typename To>
+        -:  149:  struct enable_if_convertible
+        -:  150:    : iterators::enable_if<
+        -:  151:          is_convertible<From, To>
+        -:  152:        , boost::detail::enable_type
+        -:  153:      >
+        -:  154:  {};
+        -:  155:      
+        -:  156:# endif
+        -:  157:  
+        -:  158:  //
+        -:  159:  // Default template argument handling for iterator_adaptor
+        -:  160:  //
+        -:  161:  namespace detail
+        -:  162:  {
+        -:  163:    // If T is use_default, return the result of invoking
+        -:  164:    // DefaultNullaryFn, otherwise return T.
+        -:  165:    template <class T, class DefaultNullaryFn>
+        -:  166:    struct ia_dflt_help
+        -:  167:      : mpl::eval_if<
+        -:  168:            is_same<T, use_default>
+        -:  169:          , DefaultNullaryFn
+        -:  170:          , mpl::identity<T>
+        -:  171:        >
+        -:  172:    {
+        -:  173:    };
+        -:  174:
+        -:  175:    // A metafunction which computes an iterator_adaptor's base class,
+        -:  176:    // a specialization of iterator_facade.
+        -:  177:    template <
+        -:  178:        class Derived
+        -:  179:      , class Base
+        -:  180:      , class Value
+        -:  181:      , class Traversal
+        -:  182:      , class Reference
+        -:  183:      , class Difference
+        -:  184:    >
+        -:  185:    struct iterator_adaptor_base
+        -:  186:    {
+        -:  187:        typedef iterator_facade<
+        -:  188:            Derived
+        -:  189:            
+        -:  190:# ifdef BOOST_ITERATOR_REF_CONSTNESS_KILLS_WRITABILITY
+        -:  191:          , typename boost::detail::ia_dflt_help<
+        -:  192:                Value
+        -:  193:              , mpl::eval_if<
+        -:  194:                    is_same<Reference,use_default>
+        -:  195:                  , iterator_value<Base>
+        -:  196:                  , remove_reference<Reference>
+        -:  197:                >
+        -:  198:            >::type
+        -:  199:# else
+        -:  200:          , typename boost::detail::ia_dflt_help<
+        -:  201:                Value, iterator_value<Base>
+        -:  202:            >::type
+        -:  203:# endif
+        -:  204:            
+        -:  205:          , typename boost::detail::ia_dflt_help<
+        -:  206:                Traversal
+        -:  207:              , iterator_traversal<Base>
+        -:  208:            >::type
+        -:  209:
+        -:  210:          , typename boost::detail::ia_dflt_help<
+        -:  211:                Reference
+        -:  212:              , mpl::eval_if<
+        -:  213:                    is_same<Value,use_default>
+        -:  214:                  , iterator_reference<Base>
+        -:  215:                  , add_reference<Value>
+        -:  216:                >
+        -:  217:            >::type
+        -:  218:
+        -:  219:          , typename boost::detail::ia_dflt_help<
+        -:  220:                Difference, iterator_difference<Base>
+        -:  221:            >::type
+        -:  222:        >
+        -:  223:        type;
+        -:  224:    };
+        -:  225:  
+        -:  226:    // workaround for aC++ CR JAGaf33512
+        -:  227:    template <class Tr1, class Tr2>
+        -:  228:    inline void iterator_adaptor_assert_traversal ()
+        -:  229:    {
+        -:  230:      BOOST_STATIC_ASSERT((is_convertible<Tr1, Tr2>::value));
+        -:  231:    }
+        -:  232:  }
+        -:  233:  
+        -:  234:  //
+        -:  235:  // Iterator Adaptor
+        -:  236:  //
+        -:  237:  // The parameter ordering changed slightly with respect to former
+        -:  238:  // versions of iterator_adaptor The idea is that when the user needs
+        -:  239:  // to fiddle with the reference type it is highly likely that the
+        -:  240:  // iterator category has to be adjusted as well.  Any of the
+        -:  241:  // following four template arguments may be ommitted or explicitly
+        -:  242:  // replaced by use_default.
+        -:  243:  //
+        -:  244:  //   Value - if supplied, the value_type of the resulting iterator, unless
+        -:  245:  //      const. If const, a conforming compiler strips constness for the
+        -:  246:  //      value_type. If not supplied, iterator_traits<Base>::value_type is used
+        -:  247:  //
+        -:  248:  //   Category - the traversal category of the resulting iterator. If not
+        -:  249:  //      supplied, iterator_traversal<Base>::type is used.
+        -:  250:  //
+        -:  251:  //   Reference - the reference type of the resulting iterator, and in
+        -:  252:  //      particular, the result type of operator*(). If not supplied but
+        -:  253:  //      Value is supplied, Value& is used. Otherwise
+        -:  254:  //      iterator_traits<Base>::reference is used.
+        -:  255:  //
+        -:  256:  //   Difference - the difference_type of the resulting iterator. If not
+        -:  257:  //      supplied, iterator_traits<Base>::difference_type is used.
+        -:  258:  //
+        -:  259:  template <
+        -:  260:      class Derived
+        -:  261:    , class Base
+        -:  262:    , class Value        = use_default
+        -:  263:    , class Traversal    = use_default
+        -:  264:    , class Reference    = use_default
+        -:  265:    , class Difference   = use_default
+        -:  266:  >
+        -:  267:  class iterator_adaptor
+        -:  268:    : public boost::detail::iterator_adaptor_base<
+        -:  269:        Derived, Base, Value, Traversal, Reference, Difference
+        -:  270:      >::type
+        -:  271:  {
+        -:  272:      friend class iterator_core_access;
+        -:  273:
+        -:  274:   protected:
+        -:  275:      typedef typename boost::detail::iterator_adaptor_base<
+        -:  276:          Derived, Base, Value, Traversal, Reference, Difference
+        -:  277:      >::type super_t;
+        -:  278:   public:
+function _ZN5boost16iterator_adaptorINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEES7_SA_NS_11use_defaultESA_lEC2Ev called 24 returned 100% blocks executed 100%
+       24:  279:      iterator_adaptor() {}
+call    0 returned 100%
+call    1 returned 100%
+        -:  280:
+function _ZN5boost16iterator_adaptorINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEES7_SA_NS_11use_defaultESA_lEC2ERKS7_ called 80 returned 100% blocks executed 100%
+function _ZN5boost16iterator_adaptorINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEESI_mNS_11use_defaultEmlEC2ERKSI_ called 24 returned 100% blocks executed 100%
+      104:  281:      explicit iterator_adaptor(Base const &iter)
+      104:  282:          : m_iterator(iter)
+call    0 returned 100%
+call    1 returned 100%
+        -:  283:      {
+      104:  284:      }
+        -:  285:
+        -:  286:      typedef Base base_type;
+        -:  287:
+function _ZNK5boost16iterator_adaptorINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEES7_SA_NS_11use_defaultESA_lE4baseEv called 240 returned 100% blocks executed 100%
+function _ZNK5boost16iterator_adaptorINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEESI_mNS_11use_defaultEmlE4baseEv called 76 returned 100% blocks executed 100%
+      316:  288:      Base const& base() const
+      316:  289:        { return m_iterator; }
+        -:  290:
+        -:  291:   protected:
+        -:  292:      // for convenience in derived classes
+        -:  293:      typedef iterator_adaptor<Derived,Base,Value,Traversal,Reference,Difference> iterator_adaptor_;
+        -:  294:      
+        -:  295:      //
+        -:  296:      // lvalue access to the Base object for Derived
+        -:  297:      //
+        -:  298:      Base const& base_reference() const
+        -:  299:        { return m_iterator; }
+        -:  300:
+        -:  301:      Base& base_reference()
+        -:  302:        { return m_iterator; }
+        -:  303:
+        -:  304:   private:
+        -:  305:      //
+        -:  306:      // Core iterator interface for iterator_facade.  This is private
+        -:  307:      // to prevent temptation for Derived classes to use it, which
+        -:  308:      // will often result in an error.  Derived classes should use
+        -:  309:      // base_reference(), above, to get direct access to m_iterator.
+        -:  310:      // 
+        -:  311:      typename super_t::reference dereference() const
+        -:  312:        { return *m_iterator; }
+        -:  313:
+        -:  314:      template <
+        -:  315:      class OtherDerived, class OtherIterator, class V, class C, class R, class D
+        -:  316:      >   
+function _ZNK5boost16iterator_adaptorINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEESI_mNS_11use_defaultEmlE5equalISJ_SI_mSK_mlEEbRKNS0_IT_T0_T1_T2_T3_T4_EE called 44 returned 100% blocks executed 100%
+function _ZNK5boost16iterator_adaptorINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEES7_SA_NS_11use_defaultESA_lE5equalISB_S7_SA_SC_SA_lEEbRKNS0_IT_T0_T1_T2_T3_T4_EE called 88 returned 100% blocks executed 100%
+      132:  317:      bool equal(iterator_adaptor<OtherDerived, OtherIterator, V, C, R, D> const& x) const
+        -:  318:      {
+        -:  319:        // Maybe readd with same_distance
+        -:  320:        //           BOOST_STATIC_ASSERT(
+        -:  321:        //               (detail::same_category_and_difference<Derived,OtherDerived>::value)
+        -:  322:        //               );
+      132:  323:          return m_iterator == x.base();
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+        -:  324:      }
+        -:  325:
+        -:  326:      typedef typename iterator_category_to_traversal<
+        -:  327:          typename super_t::iterator_category
+        -:  328:      >::type my_traversal;
+        -:  329:
+        -:  330:# define BOOST_ITERATOR_ADAPTOR_ASSERT_TRAVERSAL(cat) \
+        -:  331:      boost::detail::iterator_adaptor_assert_traversal<my_traversal, cat>();
+        -:  332:
+        -:  333:      void advance(typename super_t::difference_type n)
+        -:  334:      {
+        -:  335:          BOOST_ITERATOR_ADAPTOR_ASSERT_TRAVERSAL(random_access_traversal_tag)
+        -:  336:          m_iterator += n;
+        -:  337:      }
+        -:  338:  
+function _ZN5boost16iterator_adaptorINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS1_4sep_ImNS_11no_propertyEEEEmNS1_14edge_desc_implINS_12directed_tagEmEElEES7_SA_NS_11use_defaultESA_lE9incrementEv called 76 returned 100% blocks executed 100%
+function _ZN5boost16iterator_adaptorINS_18adjacency_iteratorINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS9_4sep_ImS6_EEEmNS9_14edge_desc_implINS_12directed_tagEmEElEElEESI_mNS_11use_defaultEmlE9incrementEv called 32 returned 100% blocks executed 100%
+      108:  339:      void increment() { ++m_iterator; }
+call    0 returned 100%
+call    1 returned 100%
+        -:  340:
+        -:  341:      void decrement() 
+        -:  342:      {
+        -:  343:          BOOST_ITERATOR_ADAPTOR_ASSERT_TRAVERSAL(bidirectional_traversal_tag)
+        -:  344:           --m_iterator;
+        -:  345:      }
+        -:  346:
+        -:  347:      template <
+        -:  348:          class OtherDerived, class OtherIterator, class V, class C, class R, class D
+        -:  349:      >   
+        -:  350:      typename super_t::difference_type distance_to(
+        -:  351:          iterator_adaptor<OtherDerived, OtherIterator, V, C, R, D> const& y) const
+        -:  352:      {
+        -:  353:          BOOST_ITERATOR_ADAPTOR_ASSERT_TRAVERSAL(random_access_traversal_tag)
+        -:  354:          // Maybe readd with same_distance
+        -:  355:          //           BOOST_STATIC_ASSERT(
+        -:  356:          //               (detail::same_category_and_difference<Derived,OtherDerived>::value)
+        -:  357:          //               );
+        -:  358:          return y.base() - m_iterator;
+        -:  359:      }
+        -:  360:
+        -:  361:# undef BOOST_ITERATOR_ADAPTOR_ASSERT_TRAVERSAL
+        -:  362:      
+        -:  363:   private: // data members
+        -:  364:      Base m_iterator;
+        -:  365:  };
+        -:  366:
+        -:  367:} // namespace boost
+        -:  368:
+        -:  369:#include <boost/iterator/detail/config_undef.hpp>
+        -:  370:
+        -:  371:#endif // BOOST_ITERATOR_ADAPTOR_23022003THW_HPP

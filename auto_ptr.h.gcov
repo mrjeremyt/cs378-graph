@@ -1,0 +1,304 @@
+        -:    0:Source:/usr/include/c++/4.7/backward/auto_ptr.h
+        -:    0:Programs:1
+        -:    1:// auto_ptr implementation -*- C++ -*-
+        -:    2:
+        -:    3:// Copyright (C) 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
+        -:    4://
+        -:    5:// This file is part of the GNU ISO C++ Library.  This library is free
+        -:    6:// software; you can redistribute it and/or modify it under the
+        -:    7:// terms of the GNU General Public License as published by the
+        -:    8:// Free Software Foundation; either version 3, or (at your option)
+        -:    9:// any later version.
+        -:   10:
+        -:   11:// This library is distributed in the hope that it will be useful,
+        -:   12:// but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   13:// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   14:// GNU General Public License for more details.
+        -:   15:
+        -:   16:// Under Section 7 of GPL version 3, you are granted additional
+        -:   17:// permissions described in the GCC Runtime Library Exception, version
+        -:   18:// 3.1, as published by the Free Software Foundation.
+        -:   19:
+        -:   20:// You should have received a copy of the GNU General Public License and
+        -:   21:// a copy of the GCC Runtime Library Exception along with this program;
+        -:   22:// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+        -:   23:// <http://www.gnu.org/licenses/>.
+        -:   24:
+        -:   25:/** @file backward/auto_ptr.h
+        -:   26: *  This is an internal header file, included by other library headers.
+        -:   27: *  Do not attempt to use it directly. @headername{memory}
+        -:   28: */
+        -:   29:
+        -:   30:#ifndef _BACKWARD_AUTO_PTR_H
+        -:   31:#define _BACKWARD_AUTO_PTR_H 1
+        -:   32:
+        -:   33:#include <bits/c++config.h>
+        -:   34:#include <debug/debug.h>
+        -:   35:
+        -:   36:namespace std _GLIBCXX_VISIBILITY(default)
+        -:   37:{
+        -:   38:_GLIBCXX_BEGIN_NAMESPACE_VERSION
+        -:   39:
+        -:   40:  /**
+        -:   41:   *  A wrapper class to provide auto_ptr with reference semantics.
+        -:   42:   *  For example, an auto_ptr can be assigned (or constructed from)
+        -:   43:   *  the result of a function which returns an auto_ptr by value.
+        -:   44:   *
+        -:   45:   *  All the auto_ptr_ref stuff should happen behind the scenes.
+        -:   46:   */
+        -:   47:  template<typename _Tp1>
+        -:   48:    struct auto_ptr_ref
+        -:   49:    {
+        -:   50:      _Tp1* _M_ptr;
+        -:   51:      
+        -:   52:      explicit
+        -:   53:      auto_ptr_ref(_Tp1* __p): _M_ptr(__p) { }
+        -:   54:    } _GLIBCXX_DEPRECATED;
+        -:   55:
+        -:   56:
+        -:   57:  /**
+        -:   58:   *  @brief  A simple smart pointer providing strict ownership semantics.
+        -:   59:   *
+        -:   60:   *  The Standard says:
+        -:   61:   *  <pre>
+        -:   62:   *  An @c auto_ptr owns the object it holds a pointer to.  Copying
+        -:   63:   *  an @c auto_ptr copies the pointer and transfers ownership to the
+        -:   64:   *  destination.  If more than one @c auto_ptr owns the same object
+        -:   65:   *  at the same time the behavior of the program is undefined.
+        -:   66:   *
+        -:   67:   *  The uses of @c auto_ptr include providing temporary
+        -:   68:   *  exception-safety for dynamically allocated memory, passing
+        -:   69:   *  ownership of dynamically allocated memory to a function, and
+        -:   70:   *  returning dynamically allocated memory from a function.  @c
+        -:   71:   *  auto_ptr does not meet the CopyConstructible and Assignable
+        -:   72:   *  requirements for Standard Library <a
+        -:   73:   *  href="tables.html#65">container</a> elements and thus
+        -:   74:   *  instantiating a Standard Library container with an @c auto_ptr
+        -:   75:   *  results in undefined behavior.
+        -:   76:   *  </pre>
+        -:   77:   *  Quoted from [20.4.5]/3.
+        -:   78:   *
+        -:   79:   *  Good examples of what can and cannot be done with auto_ptr can
+        -:   80:   *  be found in the libstdc++ testsuite.
+        -:   81:   *
+        -:   82:   *  _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -:   83:   *  127.  auto_ptr<> conversion issues
+        -:   84:   *  These resolutions have all been incorporated.
+        -:   85:   */
+        -:   86:  template<typename _Tp>
+        -:   87:    class auto_ptr
+        -:   88:    {
+        -:   89:    private:
+        -:   90:      _Tp* _M_ptr;
+        -:   91:      
+        -:   92:    public:
+        -:   93:      /// The pointed-to type.
+        -:   94:      typedef _Tp element_type;
+        -:   95:      
+        -:   96:      /**
+        -:   97:       *  @brief  An %auto_ptr is usually constructed from a raw pointer.
+        -:   98:       *  @param  __p  A pointer (defaults to NULL).
+        -:   99:       *
+        -:  100:       *  This object now @e owns the object pointed to by @a __p.
+        -:  101:       */
+        -:  102:      explicit
+function _ZNSt8auto_ptrIN5boost11no_propertyEEC2EPS1_ called 60292 returned 100% blocks executed 100%
+    60292:  103:      auto_ptr(element_type* __p = 0) throw() : _M_ptr(__p) { }
+        -:  104:
+        -:  105:      /**
+        -:  106:       *  @brief  An %auto_ptr can be constructed from another %auto_ptr.
+        -:  107:       *  @param  __a  Another %auto_ptr of the same type.
+        -:  108:       *
+        -:  109:       *  This object now @e owns the object previously owned by @a __a,
+        -:  110:       *  which has given up ownership.
+        -:  111:       */
+function _ZNSt8auto_ptrIN5boost11no_propertyEEC2ERS2_ called 6212 returned 100% blocks executed 100%
+     6212:  112:      auto_ptr(auto_ptr& __a) throw() : _M_ptr(__a.release()) { }
+call    0 returned 100%
+        -:  113:
+        -:  114:      /**
+        -:  115:       *  @brief  An %auto_ptr can be constructed from another %auto_ptr.
+        -:  116:       *  @param  __a  Another %auto_ptr of a different but related type.
+        -:  117:       *
+        -:  118:       *  A pointer-to-Tp1 must be convertible to a
+        -:  119:       *  pointer-to-Tp/element_type.
+        -:  120:       *
+        -:  121:       *  This object now @e owns the object previously owned by @a __a,
+        -:  122:       *  which has given up ownership.
+        -:  123:       */
+        -:  124:      template<typename _Tp1>
+        -:  125:        auto_ptr(auto_ptr<_Tp1>& __a) throw() : _M_ptr(__a.release()) { }
+        -:  126:
+        -:  127:      /**
+        -:  128:       *  @brief  %auto_ptr assignment operator.
+        -:  129:       *  @param  __a  Another %auto_ptr of the same type.
+        -:  130:       *
+        -:  131:       *  This object now @e owns the object previously owned by @a __a,
+        -:  132:       *  which has given up ownership.  The object that this one @e
+        -:  133:       *  used to own and track has been deleted.
+        -:  134:       */
+        -:  135:      auto_ptr&
+        -:  136:      operator=(auto_ptr& __a) throw()
+        -:  137:      {
+        -:  138:	reset(__a.release());
+        -:  139:	return *this;
+        -:  140:      }
+        -:  141:
+        -:  142:      /**
+        -:  143:       *  @brief  %auto_ptr assignment operator.
+        -:  144:       *  @param  __a  Another %auto_ptr of a different but related type.
+        -:  145:       *
+        -:  146:       *  A pointer-to-Tp1 must be convertible to a pointer-to-Tp/element_type.
+        -:  147:       *
+        -:  148:       *  This object now @e owns the object previously owned by @a __a,
+        -:  149:       *  which has given up ownership.  The object that this one @e
+        -:  150:       *  used to own and track has been deleted.
+        -:  151:       */
+        -:  152:      template<typename _Tp1>
+        -:  153:        auto_ptr&
+        -:  154:        operator=(auto_ptr<_Tp1>& __a) throw()
+        -:  155:        {
+        -:  156:	  reset(__a.release());
+        -:  157:	  return *this;
+        -:  158:	}
+        -:  159:
+        -:  160:      /**
+        -:  161:       *  When the %auto_ptr goes out of scope, the object it owns is
+        -:  162:       *  deleted.  If it no longer owns anything (i.e., @c get() is
+        -:  163:       *  @c NULL), then this has no effect.
+        -:  164:       *
+        -:  165:       *  The C++ standard says there is supposed to be an empty throw
+        -:  166:       *  specification here, but omitting it is standard conforming.  Its
+        -:  167:       *  presence can be detected only if _Tp::~_Tp() throws, but this is
+        -:  168:       *  prohibited.  [17.4.3.6]/2
+        -:  169:       */
+function _ZNSt8auto_ptrIN5boost11no_propertyEED2Ev called 66504 returned 100% blocks executed 100%
+    66504:  170:      ~auto_ptr() { delete _M_ptr; }
+call    0 returned 100%
+        -:  171:      
+        -:  172:      /**
+        -:  173:       *  @brief  Smart pointer dereferencing.
+        -:  174:       *
+        -:  175:       *  If this %auto_ptr no longer owns anything, then this
+        -:  176:       *  operation will crash.  (For a smart pointer, <em>no longer owns
+        -:  177:       *  anything</em> is the same as being a null pointer, and you know
+        -:  178:       *  what happens when you dereference one of those...)
+        -:  179:       */
+        -:  180:      element_type&
+function _ZNKSt8auto_ptrIN5boost11no_propertyEEdeEv called 60364 returned 100% blocks executed 100%
+    60364:  181:      operator*() const throw() 
+        -:  182:      {
+        -:  183:	_GLIBCXX_DEBUG_ASSERT(_M_ptr != 0);
+    60364:  184:	return *_M_ptr; 
+        -:  185:      }
+        -:  186:      
+        -:  187:      /**
+        -:  188:       *  @brief  Smart pointer dereferencing.
+        -:  189:       *
+        -:  190:       *  This returns the pointer itself, which the language then will
+        -:  191:       *  automatically cause to be dereferenced.
+        -:  192:       */
+        -:  193:      element_type*
+        -:  194:      operator->() const throw() 
+        -:  195:      {
+        -:  196:	_GLIBCXX_DEBUG_ASSERT(_M_ptr != 0);
+        -:  197:	return _M_ptr; 
+        -:  198:      }
+        -:  199:      
+        -:  200:      /**
+        -:  201:       *  @brief  Bypassing the smart pointer.
+        -:  202:       *  @return  The raw pointer being managed.
+        -:  203:       *
+        -:  204:       *  You can get a copy of the pointer that this object owns, for
+        -:  205:       *  situations such as passing to a function which only accepts
+        -:  206:       *  a raw pointer.
+        -:  207:       *
+        -:  208:       *  @note  This %auto_ptr still owns the memory.
+        -:  209:       */
+        -:  210:      element_type*
+        -:  211:      get() const throw() { return _M_ptr; }
+        -:  212:      
+        -:  213:      /**
+        -:  214:       *  @brief  Bypassing the smart pointer.
+        -:  215:       *  @return  The raw pointer being managed.
+        -:  216:       *
+        -:  217:       *  You can get a copy of the pointer that this object owns, for
+        -:  218:       *  situations such as passing to a function which only accepts
+        -:  219:       *  a raw pointer.
+        -:  220:       *
+        -:  221:       *  @note  This %auto_ptr no longer owns the memory.  When this object
+        -:  222:       *  goes out of scope, nothing will happen.
+        -:  223:       */
+        -:  224:      element_type*
+function _ZNSt8auto_ptrIN5boost11no_propertyEE7releaseEv called 6212 returned 100% blocks executed 100%
+     6212:  225:      release() throw()
+        -:  226:      {
+     6212:  227:	element_type* __tmp = _M_ptr;
+     6212:  228:	_M_ptr = 0;
+     6212:  229:	return __tmp;
+        -:  230:      }
+        -:  231:      
+        -:  232:      /**
+        -:  233:       *  @brief  Forcibly deletes the managed object.
+        -:  234:       *  @param  __p  A pointer (defaults to NULL).
+        -:  235:       *
+        -:  236:       *  This object now @e owns the object pointed to by @a __p.  The
+        -:  237:       *  previous object has been deleted.
+        -:  238:       */
+        -:  239:      void
+        -:  240:      reset(element_type* __p = 0) throw()
+        -:  241:      {
+        -:  242:	if (__p != _M_ptr)
+        -:  243:	  {
+        -:  244:	    delete _M_ptr;
+        -:  245:	    _M_ptr = __p;
+        -:  246:	  }
+        -:  247:      }
+        -:  248:      
+        -:  249:      /** 
+        -:  250:       *  @brief  Automatic conversions
+        -:  251:       *
+        -:  252:       *  These operations convert an %auto_ptr into and from an auto_ptr_ref
+        -:  253:       *  automatically as needed.  This allows constructs such as
+        -:  254:       *  @code
+        -:  255:       *    auto_ptr<Derived>  func_returning_auto_ptr(.....);
+        -:  256:       *    ...
+        -:  257:       *    auto_ptr<Base> ptr = func_returning_auto_ptr(.....);
+        -:  258:       *  @endcode
+        -:  259:       */
+        -:  260:      auto_ptr(auto_ptr_ref<element_type> __ref) throw()
+        -:  261:      : _M_ptr(__ref._M_ptr) { }
+        -:  262:      
+        -:  263:      auto_ptr&
+        -:  264:      operator=(auto_ptr_ref<element_type> __ref) throw()
+        -:  265:      {
+        -:  266:	if (__ref._M_ptr != this->get())
+        -:  267:	  {
+        -:  268:	    delete _M_ptr;
+        -:  269:	    _M_ptr = __ref._M_ptr;
+        -:  270:	  }
+        -:  271:	return *this;
+        -:  272:      }
+        -:  273:      
+        -:  274:      template<typename _Tp1>
+        -:  275:        operator auto_ptr_ref<_Tp1>() throw()
+        -:  276:        { return auto_ptr_ref<_Tp1>(this->release()); }
+        -:  277:
+        -:  278:      template<typename _Tp1>
+        -:  279:        operator auto_ptr<_Tp1>() throw()
+        -:  280:        { return auto_ptr<_Tp1>(this->release()); }
+        -:  281:    } _GLIBCXX_DEPRECATED;
+        -:  282:
+        -:  283:  // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -:  284:  // 541. shared_ptr template assignment and void
+        -:  285:  template<>
+        -:  286:    class auto_ptr<void>
+        -:  287:    {
+        -:  288:    public:
+        -:  289:      typedef void element_type;
+        -:  290:    } _GLIBCXX_DEPRECATED;
+        -:  291:
+        -:  292:_GLIBCXX_END_NAMESPACE_VERSION
+        -:  293:} // namespace
+        -:  294:
+        -:  295:#endif /* _BACKWARD_AUTO_PTR_H */

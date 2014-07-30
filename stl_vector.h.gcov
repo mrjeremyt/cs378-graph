@@ -1,0 +1,1646 @@
+        -:    0:Source:/usr/include/c++/4.7/bits/stl_vector.h
+        -:    0:Programs:1
+        -:    1:// Vector implementation -*- C++ -*-
+        -:    2:
+        -:    3:// Copyright (C) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+        -:    4:// 2011 Free Software Foundation, Inc.
+        -:    5://
+        -:    6:// This file is part of the GNU ISO C++ Library.  This library is free
+        -:    7:// software; you can redistribute it and/or modify it under the
+        -:    8:// terms of the GNU General Public License as published by the
+        -:    9:// Free Software Foundation; either version 3, or (at your option)
+        -:   10:// any later version.
+        -:   11:
+        -:   12:// This library is distributed in the hope that it will be useful,
+        -:   13:// but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   14:// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   15:// GNU General Public License for more details.
+        -:   16:
+        -:   17:// Under Section 7 of GPL version 3, you are granted additional
+        -:   18:// permissions described in the GCC Runtime Library Exception, version
+        -:   19:// 3.1, as published by the Free Software Foundation.
+        -:   20:
+        -:   21:// You should have received a copy of the GNU General Public License and
+        -:   22:// a copy of the GCC Runtime Library Exception along with this program;
+        -:   23:// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+        -:   24:// <http://www.gnu.org/licenses/>.
+        -:   25:
+        -:   26:/*
+        -:   27: *
+        -:   28: * Copyright (c) 1994
+        -:   29: * Hewlett-Packard Company
+        -:   30: *
+        -:   31: * Permission to use, copy, modify, distribute and sell this software
+        -:   32: * and its documentation for any purpose is hereby granted without fee,
+        -:   33: * provided that the above copyright notice appear in all copies and
+        -:   34: * that both that copyright notice and this permission notice appear
+        -:   35: * in supporting documentation.  Hewlett-Packard Company makes no
+        -:   36: * representations about the suitability of this software for any
+        -:   37: * purpose.  It is provided "as is" without express or implied warranty.
+        -:   38: *
+        -:   39: *
+        -:   40: * Copyright (c) 1996
+        -:   41: * Silicon Graphics Computer Systems, Inc.
+        -:   42: *
+        -:   43: * Permission to use, copy, modify, distribute and sell this software
+        -:   44: * and its documentation for any purpose is hereby granted without fee,
+        -:   45: * provided that the above copyright notice appear in all copies and
+        -:   46: * that both that copyright notice and this permission notice appear
+        -:   47: * in supporting documentation.  Silicon Graphics makes no
+        -:   48: * representations about the suitability of this  software for any
+        -:   49: * purpose.  It is provided "as is" without express or implied warranty.
+        -:   50: */
+        -:   51:
+        -:   52:/** @file bits/stl_vector.h
+        -:   53: *  This is an internal header file, included by other library headers.
+        -:   54: *  Do not attempt to use it directly. @headername{vector}
+        -:   55: */
+        -:   56:
+        -:   57:#ifndef _STL_VECTOR_H
+        -:   58:#define _STL_VECTOR_H 1
+        -:   59:
+        -:   60:#include <bits/stl_iterator_base_funcs.h>
+        -:   61:#include <bits/functexcept.h>
+        -:   62:#include <bits/concept_check.h>
+        -:   63:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:   64:#include <initializer_list>
+        -:   65:#endif
+        -:   66:
+        -:   67:namespace std _GLIBCXX_VISIBILITY(default)
+        -:   68:{
+        -:   69:_GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+        -:   70:
+        -:   71:  /// See bits/stl_deque.h's _Deque_base for an explanation.
+        -:   72:  template<typename _Tp, typename _Alloc>
+        -:   73:    struct _Vector_base
+        -:   74:    {
+        -:   75:      typedef typename __gnu_cxx::__alloc_traits<_Alloc>::template
+        -:   76:        rebind<_Tp>::other _Tp_alloc_type;
+        -:   77:      typedef typename __gnu_cxx::__alloc_traits<_Tp_alloc_type>::pointer
+        -:   78:       	pointer;
+        -:   79:
+function _ZNSt12_Vector_baseImSaImEE12_Vector_implD2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE12_Vector_implD2Ev called 136 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIiSaIiEE12_Vector_implD2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE12_Vector_implD2Ev called 136 returned 100% blocks executed 100%
+      280:   80:      struct _Vector_impl 
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+        -:   81:      : public _Tp_alloc_type
+        -:   82:      {
+        -:   83:	pointer _M_start;
+        -:   84:	pointer _M_finish;
+        -:   85:	pointer _M_end_of_storage;
+        -:   86:
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE12_Vector_implC2Ev called 136 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseImSaImEE12_Vector_implC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIiSaIiEE12_Vector_implC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE12_Vector_implC2Ev called 136 returned 100% blocks executed 100%
+      280:   87:	_Vector_impl()
+      280:   88:	: _Tp_alloc_type(), _M_start(0), _M_finish(0), _M_end_of_storage(0)
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+      280:   89:	{ }
+        -:   90:
+        -:   91:	_Vector_impl(_Tp_alloc_type const& __a)
+        -:   92:	: _Tp_alloc_type(__a), _M_start(0), _M_finish(0), _M_end_of_storage(0)
+        -:   93:	{ }
+        -:   94:
+        -:   95:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:   96:	_Vector_impl(_Tp_alloc_type&& __a)
+        -:   97:	: _Tp_alloc_type(std::move(__a)),
+        -:   98:	  _M_start(0), _M_finish(0), _M_end_of_storage(0)
+        -:   99:	{ }
+        -:  100:#endif
+        -:  101:
+        -:  102:	void _M_swap_data(_Vector_impl& __x)
+        -:  103:	{
+        -:  104:	  std::swap(_M_start, __x._M_start);
+        -:  105:	  std::swap(_M_finish, __x._M_finish);
+        -:  106:	  std::swap(_M_end_of_storage, __x._M_end_of_storage);
+        -:  107:	}
+        -:  108:      };
+        -:  109:      
+        -:  110:    public:
+        -:  111:      typedef _Alloc allocator_type;
+        -:  112:
+        -:  113:      _Tp_alloc_type&
+function _ZNSt12_Vector_baseImSaImEE19_M_get_Tp_allocatorEv called 68 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE19_M_get_Tp_allocatorEv called 25776 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv called 68 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE19_M_get_Tp_allocatorEv called 1032 returned 100% blocks executed 100%
+    26944:  114:      _M_get_Tp_allocator() _GLIBCXX_NOEXCEPT
+    26944:  115:      { return *static_cast<_Tp_alloc_type*>(&this->_M_impl); }
+        -:  116:
+        -:  117:      const _Tp_alloc_type&
+function _ZNKSt12_Vector_baseImSaImEE19_M_get_Tp_allocatorEv called 64 returned 100% blocks executed 100%
+function _ZNKSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE19_M_get_Tp_allocatorEv called 896 returned 100% blocks executed 100%
+function _ZNKSt12_Vector_baseIiSaIiEE19_M_get_Tp_allocatorEv called 64 returned 100% blocks executed 100%
+function _ZNKSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE19_M_get_Tp_allocatorEv called 896 returned 100% blocks executed 100%
+     1920:  118:      _M_get_Tp_allocator() const _GLIBCXX_NOEXCEPT
+     1920:  119:      { return *static_cast<const _Tp_alloc_type*>(&this->_M_impl); }
+        -:  120:
+        -:  121:      allocator_type
+        -:  122:      get_allocator() const _GLIBCXX_NOEXCEPT
+        -:  123:      { return allocator_type(_M_get_Tp_allocator()); }
+        -:  124:
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EEC2Ev called 136 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseImSaImEEC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIiSaIiEEC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EEC2Ev called 136 returned 100% blocks executed 100%
+      280:  125:      _Vector_base()
+      280:  126:      : _M_impl() { }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+        -:  127:
+        -:  128:      _Vector_base(const allocator_type& __a)
+        -:  129:      : _M_impl(__a) { }
+        -:  130:
+        -:  131:      _Vector_base(size_t __n)
+        -:  132:      : _M_impl()
+        -:  133:      { _M_create_storage(__n); }
+        -:  134:
+        -:  135:      _Vector_base(size_t __n, const allocator_type& __a)
+        -:  136:      : _M_impl(__a)
+        -:  137:      { _M_create_storage(__n); }
+        -:  138:
+        -:  139:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  140:      _Vector_base(_Tp_alloc_type&& __a)
+        -:  141:      : _M_impl(std::move(__a)) { }
+        -:  142:
+        -:  143:      _Vector_base(_Vector_base&& __x)
+        -:  144:      : _M_impl(std::move(__x._M_get_Tp_allocator()))
+        -:  145:      { this->_M_impl._M_swap_data(__x._M_impl); }
+        -:  146:
+        -:  147:      _Vector_base(_Vector_base&& __x, const allocator_type& __a)
+        -:  148:      : _M_impl(__a)
+        -:  149:      {
+        -:  150:	if (__x.get_allocator() == __a)
+        -:  151:	  this->_M_impl._M_swap_data(__x._M_impl);
+        -:  152:	else
+        -:  153:	  {
+        -:  154:	    size_t __n = __x._M_impl._M_finish - __x._M_impl._M_start;
+        -:  155:	    _M_create_storage(__n);
+        -:  156:	  }
+        -:  157:      }
+        -:  158:#endif
+        -:  159:
+function _ZNSt12_Vector_baseImSaImEED2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EED2Ev called 136 returned 100% blocks executed 60%
+function _ZNSt12_Vector_baseIiSaIiEED2Ev called 4 returned 100% blocks executed 60%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EED2Ev called 136 returned 100% blocks executed 60%
+      280:  160:      ~_Vector_base()
+      280:  161:      { _M_deallocate(this->_M_impl._M_start, this->_M_impl._M_end_of_storage
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0% (throw)
+call    3 returned 100%
+branch  4 taken 100% (fallthrough)
+branch  5 taken 0% (throw)
+call    6 returned 100%
+branch  7 taken 100% (fallthrough)
+branch  8 taken 0% (throw)
+call    9 returned 100%
+      280:  162:		      - this->_M_impl._M_start); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 never executed
+call    3 never executed
+call    4 returned 100%
+call    5 never executed
+call    6 never executed
+call    7 returned 100%
+call    8 never executed
+call    9 never executed
+        -:  163:
+        -:  164:    public:
+        -:  165:      _Vector_impl _M_impl;
+        -:  166:
+        -:  167:      pointer
+function _ZNSt12_Vector_baseImSaImEE11_M_allocateEm called 32 returned 100% blocks executed 83%
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE11_M_allocateEm called 448 returned 100% blocks executed 83%
+function _ZNSt12_Vector_baseIiSaIiEE11_M_allocateEm called 32 returned 100% blocks executed 83%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE11_M_allocateEm called 448 returned 100% blocks executed 83%
+      960:  168:      _M_allocate(size_t __n)
+      960:  169:      { return __n != 0 ? _M_impl.allocate(__n) : 0; }
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+call    2 returned 100%
+branch  3 taken 100% (fallthrough)
+branch  4 taken 0%
+call    5 returned 100%
+branch  6 taken 100% (fallthrough)
+branch  7 taken 0%
+call    8 returned 100%
+branch  9 taken 100% (fallthrough)
+branch 10 taken 0%
+call   11 returned 100%
+        -:  170:
+        -:  171:      void
+function _ZNSt12_Vector_baseImSaImEE13_M_deallocateEPmm called 36 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE13_M_deallocateEPSC_m called 584 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseIiSaIiEE13_M_deallocateEPim called 36 returned 100% blocks executed 100%
+function _ZNSt12_Vector_baseISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE13_M_deallocateEPS6_m called 584 returned 100% blocks executed 100%
+     1240:  172:      _M_deallocate(pointer __p, size_t __n)
+        -:  173:      {
+     1240:  174:	if (__p)
+branch  0 taken 89% (fallthrough)
+branch  1 taken 11%
+branch  2 taken 77% (fallthrough)
+branch  3 taken 23%
+branch  4 taken 89% (fallthrough)
+branch  5 taken 11%
+branch  6 taken 77% (fallthrough)
+branch  7 taken 23%
+      960:  175:	  _M_impl.deallocate(__p, __n);
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+     1240:  176:      }
+        -:  177:
+        -:  178:    private:
+        -:  179:      void
+        -:  180:      _M_create_storage(size_t __n)
+        -:  181:      {
+        -:  182:	this->_M_impl._M_start = this->_M_allocate(__n);
+        -:  183:	this->_M_impl._M_finish = this->_M_impl._M_start;
+        -:  184:	this->_M_impl._M_end_of_storage = this->_M_impl._M_start + __n;
+        -:  185:      }
+        -:  186:    };
+        -:  187:
+        -:  188:
+        -:  189:  /**
+        -:  190:   *  @brief A standard container which offers fixed time access to
+        -:  191:   *  individual elements in any order.
+        -:  192:   *
+        -:  193:   *  @ingroup sequences
+        -:  194:   *
+        -:  195:   *  Meets the requirements of a <a href="tables.html#65">container</a>, a
+        -:  196:   *  <a href="tables.html#66">reversible container</a>, and a
+        -:  197:   *  <a href="tables.html#67">sequence</a>, including the
+        -:  198:   *  <a href="tables.html#68">optional sequence requirements</a> with the
+        -:  199:   *  %exception of @c push_front and @c pop_front.
+        -:  200:   *
+        -:  201:   *  In some terminology a %vector can be described as a dynamic
+        -:  202:   *  C-style array, it offers fast and efficient access to individual
+        -:  203:   *  elements in any order and saves the user from worrying about
+        -:  204:   *  memory and size allocation.  Subscripting ( @c [] ) access is
+        -:  205:   *  also provided as with C-style arrays.
+        -:  206:  */
+        -:  207:  template<typename _Tp, typename _Alloc = std::allocator<_Tp> >
+        -:  208:    class vector : protected _Vector_base<_Tp, _Alloc>
+        -:  209:    {
+        -:  210:      // Concept requirements.
+        -:  211:      typedef typename _Alloc::value_type                _Alloc_value_type;
+        -:  212:      __glibcxx_class_requires(_Tp, _SGIAssignableConcept)
+        -:  213:      __glibcxx_class_requires2(_Tp, _Alloc_value_type, _SameTypeConcept)
+        -:  214:      
+        -:  215:      typedef _Vector_base<_Tp, _Alloc>			 _Base;
+        -:  216:      typedef typename _Base::_Tp_alloc_type		 _Tp_alloc_type;
+        -:  217:      typedef __gnu_cxx::__alloc_traits<_Tp_alloc_type>  _Alloc_traits;
+        -:  218:
+        -:  219:    public:
+        -:  220:      typedef _Tp					 value_type;
+        -:  221:      typedef typename _Base::pointer                    pointer;
+        -:  222:      typedef typename _Alloc_traits::const_pointer      const_pointer;
+        -:  223:      typedef typename _Alloc_traits::reference          reference;
+        -:  224:      typedef typename _Alloc_traits::const_reference    const_reference;
+        -:  225:      typedef __gnu_cxx::__normal_iterator<pointer, vector> iterator;
+        -:  226:      typedef __gnu_cxx::__normal_iterator<const_pointer, vector>
+        -:  227:      const_iterator;
+        -:  228:      typedef std::reverse_iterator<const_iterator>  const_reverse_iterator;
+        -:  229:      typedef std::reverse_iterator<iterator>		 reverse_iterator;
+        -:  230:      typedef size_t					 size_type;
+        -:  231:      typedef ptrdiff_t					 difference_type;
+        -:  232:      typedef _Alloc                        		 allocator_type;
+        -:  233:
+        -:  234:    protected:
+        -:  235:      using _Base::_M_allocate;
+        -:  236:      using _Base::_M_deallocate;
+        -:  237:      using _Base::_M_impl;
+        -:  238:      using _Base::_M_get_Tp_allocator;
+        -:  239:
+        -:  240:    public:
+        -:  241:      // [23.2.4.1] construct/copy/destroy
+        -:  242:      // (assign() and get_allocator() are also listed in this section)
+        -:  243:      /**
+        -:  244:       *  @brief  Default constructor creates no elements.
+        -:  245:       */
+function _ZNSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EEC2Ev called 136 returned 100% blocks executed 100%
+function _ZNSt6vectorImSaImEEC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt6vectorIiSaIiEEC2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EEC2Ev called 136 returned 100% blocks executed 100%
+      280:  246:      vector()
+      280:  247:      : _Base() { }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+        -:  248:
+        -:  249:      /**
+        -:  250:       *  @brief  Creates a %vector with no elements.
+        -:  251:       *  @param  __a  An allocator object.
+        -:  252:       */
+        -:  253:      explicit
+        -:  254:      vector(const allocator_type& __a)
+        -:  255:      : _Base(__a) { }
+        -:  256:
+        -:  257:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  258:      /**
+        -:  259:       *  @brief  Creates a %vector with default constructed elements.
+        -:  260:       *  @param  __n  The number of elements to initially create.
+        -:  261:       *
+        -:  262:       *  This constructor fills the %vector with @a __n default
+        -:  263:       *  constructed elements.
+        -:  264:       */
+        -:  265:      explicit
+        -:  266:      vector(size_type __n)
+        -:  267:      : _Base(__n)
+        -:  268:      { _M_default_initialize(__n); }
+        -:  269:
+        -:  270:      /**
+        -:  271:       *  @brief  Creates a %vector with copies of an exemplar element.
+        -:  272:       *  @param  __n  The number of elements to initially create.
+        -:  273:       *  @param  __value  An element to copy.
+        -:  274:       *  @param  __a  An allocator.
+        -:  275:       *
+        -:  276:       *  This constructor fills the %vector with @a __n copies of @a __value.
+        -:  277:       */
+        -:  278:      vector(size_type __n, const value_type& __value,
+        -:  279:	     const allocator_type& __a = allocator_type())
+        -:  280:      : _Base(__n, __a)
+        -:  281:      { _M_fill_initialize(__n, __value); }
+        -:  282:#else
+        -:  283:      /**
+        -:  284:       *  @brief  Creates a %vector with copies of an exemplar element.
+        -:  285:       *  @param  __n  The number of elements to initially create.
+        -:  286:       *  @param  __value  An element to copy.
+        -:  287:       *  @param  __a  An allocator.
+        -:  288:       *
+        -:  289:       *  This constructor fills the %vector with @a __n copies of @a __value.
+        -:  290:       */
+        -:  291:      explicit
+        -:  292:      vector(size_type __n, const value_type& __value = value_type(),
+        -:  293:	     const allocator_type& __a = allocator_type())
+        -:  294:      : _Base(__n, __a)
+        -:  295:      { _M_fill_initialize(__n, __value); }
+        -:  296:#endif
+        -:  297:
+        -:  298:      /**
+        -:  299:       *  @brief  %Vector copy constructor.
+        -:  300:       *  @param  __x  A %vector of identical element and allocator types.
+        -:  301:       *
+        -:  302:       *  The newly-created %vector uses a copy of the allocation
+        -:  303:       *  object used by @a __x.  All the elements of @a __x are copied,
+        -:  304:       *  but any extra memory in
+        -:  305:       *  @a __x (for fast expansion) will not be copied.
+        -:  306:       */
+        -:  307:      vector(const vector& __x)
+        -:  308:      : _Base(__x.size(),
+        -:  309:        _Alloc_traits::_S_select_on_copy(__x._M_get_Tp_allocator()))
+        -:  310:      { this->_M_impl._M_finish =
+        -:  311:	  std::__uninitialized_copy_a(__x.begin(), __x.end(),
+        -:  312:				      this->_M_impl._M_start,
+        -:  313:				      _M_get_Tp_allocator());
+        -:  314:      }
+        -:  315:
+        -:  316:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  317:      /**
+        -:  318:       *  @brief  %Vector move constructor.
+        -:  319:       *  @param  __x  A %vector of identical element and allocator types.
+        -:  320:       *
+        -:  321:       *  The newly-created %vector contains the exact contents of @a __x.
+        -:  322:       *  The contents of @a __x are a valid, but unspecified %vector.
+        -:  323:       */
+        -:  324:      vector(vector&& __x) noexcept
+        -:  325:      : _Base(std::move(__x)) { }
+        -:  326:
+        -:  327:      /// Copy constructor with alternative allocator
+        -:  328:      vector(const vector& __x, const allocator_type& __a)
+        -:  329:      : _Base(__x.size(), __a)
+        -:  330:      { this->_M_impl._M_finish =
+        -:  331:	  std::__uninitialized_copy_a(__x.begin(), __x.end(),
+        -:  332:				      this->_M_impl._M_start,
+        -:  333:				      _M_get_Tp_allocator());
+        -:  334:      }
+        -:  335:
+        -:  336:      /// Move constructor with alternative allocator
+        -:  337:      vector(vector&& __rv, const allocator_type& __m)
+        -:  338:      : _Base(std::move(__rv), __m)
+        -:  339:      {
+        -:  340:	if (__rv.get_allocator() != __m)
+        -:  341:	  {
+        -:  342:	    this->_M_impl._M_finish =
+        -:  343:	      std::__uninitialized_move_a(__rv.begin(), __rv.end(),
+        -:  344:					  this->_M_impl._M_start,
+        -:  345:					  _M_get_Tp_allocator());
+        -:  346:	    __rv.clear();
+        -:  347:	  }
+        -:  348:      }
+        -:  349:
+        -:  350:      /**
+        -:  351:       *  @brief  Builds a %vector from an initializer list.
+        -:  352:       *  @param  __l  An initializer_list.
+        -:  353:       *  @param  __a  An allocator.
+        -:  354:       *
+        -:  355:       *  Create a %vector consisting of copies of the elements in the
+        -:  356:       *  initializer_list @a __l.
+        -:  357:       *
+        -:  358:       *  This will call the element type's copy constructor N times
+        -:  359:       *  (where N is @a __l.size()) and do no memory reallocation.
+        -:  360:       */
+        -:  361:      vector(initializer_list<value_type> __l,
+        -:  362:	     const allocator_type& __a = allocator_type())
+        -:  363:      : _Base(__a)
+        -:  364:      {
+        -:  365:	_M_range_initialize(__l.begin(), __l.end(),
+        -:  366:			    random_access_iterator_tag());
+        -:  367:      }
+        -:  368:#endif
+        -:  369:
+        -:  370:      /**
+        -:  371:       *  @brief  Builds a %vector from a range.
+        -:  372:       *  @param  __first  An input iterator.
+        -:  373:       *  @param  __last  An input iterator.
+        -:  374:       *  @param  __a  An allocator.
+        -:  375:       *
+        -:  376:       *  Create a %vector consisting of copies of the elements from
+        -:  377:       *  [first,last).
+        -:  378:       *
+        -:  379:       *  If the iterators are forward, bidirectional, or
+        -:  380:       *  random-access, then this will call the elements' copy
+        -:  381:       *  constructor N times (where N is distance(first,last)) and do
+        -:  382:       *  no memory reallocation.  But if only input iterators are
+        -:  383:       *  used, then this will do at most 2N calls to the copy
+        -:  384:       *  constructor, and logN memory reallocations.
+        -:  385:       */
+        -:  386:      template<typename _InputIterator>
+        -:  387:        vector(_InputIterator __first, _InputIterator __last,
+        -:  388:	       const allocator_type& __a = allocator_type())
+        -:  389:	: _Base(__a)
+        -:  390:        {
+        -:  391:	  // Check whether it's an integral type.  If so, it's not an iterator.
+        -:  392:	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
+        -:  393:	  _M_initialize_dispatch(__first, __last, _Integral());
+        -:  394:	}
+        -:  395:
+        -:  396:      /**
+        -:  397:       *  The dtor only erases the elements, and note that if the
+        -:  398:       *  elements themselves are pointers, the pointed-to memory is
+        -:  399:       *  not touched in any way.  Managing the pointer is the user's
+        -:  400:       *  responsibility.
+        -:  401:       */
+function _ZNSt6vectorImSaImEED2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EED2Ev called 136 returned 100% blocks executed 100%
+function _ZNSt6vectorIiSaIiEED2Ev called 4 returned 100% blocks executed 100%
+function _ZNSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EED2Ev called 136 returned 100% blocks executed 100%
+      280:  402:      ~vector() _GLIBCXX_NOEXCEPT
+      280:  403:      { std::_Destroy(this->_M_impl._M_start, this->_M_impl._M_finish,
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+call    6 returned 100%
+call    7 returned 100%
+      280:  404:		      _M_get_Tp_allocator()); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+        -:  405:
+        -:  406:      /**
+        -:  407:       *  @brief  %Vector assignment operator.
+        -:  408:       *  @param  __x  A %vector of identical element and allocator types.
+        -:  409:       *
+        -:  410:       *  All the elements of @a __x are copied, but any extra memory in
+        -:  411:       *  @a __x (for fast expansion) will not be copied.  Unlike the
+        -:  412:       *  copy constructor, the allocator object is not copied.
+        -:  413:       */
+        -:  414:      vector&
+        -:  415:      operator=(const vector& __x);
+        -:  416:
+        -:  417:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  418:      /**
+        -:  419:       *  @brief  %Vector move assignment operator.
+        -:  420:       *  @param  __x  A %vector of identical element and allocator types.
+        -:  421:       *
+        -:  422:       *  The contents of @a __x are moved into this %vector (without copying,
+        -:  423:       *  if the allocators permit it).
+        -:  424:       *  @a __x is a valid, but unspecified %vector.
+        -:  425:       */
+        -:  426:      vector&
+        -:  427:      operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+        -:  428:      {
+        -:  429:        constexpr bool __move_storage =
+        -:  430:          _Alloc_traits::_S_propagate_on_move_assign()
+        -:  431:          || _Alloc_traits::_S_always_equal();
+        -:  432:        _M_move_assign(std::move(__x),
+        -:  433:                       integral_constant<bool, __move_storage>());
+        -:  434:	return *this;
+        -:  435:      }
+        -:  436:
+        -:  437:      /**
+        -:  438:       *  @brief  %Vector list assignment operator.
+        -:  439:       *  @param  __l  An initializer_list.
+        -:  440:       *
+        -:  441:       *  This function fills a %vector with copies of the elements in the
+        -:  442:       *  initializer list @a __l.
+        -:  443:       *
+        -:  444:       *  Note that the assignment completely changes the %vector and
+        -:  445:       *  that the resulting %vector's size is the same as the number
+        -:  446:       *  of elements assigned.  Old data may be lost.
+        -:  447:       */
+        -:  448:      vector&
+        -:  449:      operator=(initializer_list<value_type> __l)
+        -:  450:      {
+        -:  451:	this->assign(__l.begin(), __l.end());
+        -:  452:	return *this;
+        -:  453:      }
+        -:  454:#endif
+        -:  455:
+        -:  456:      /**
+        -:  457:       *  @brief  Assigns a given value to a %vector.
+        -:  458:       *  @param  __n  Number of elements to be assigned.
+        -:  459:       *  @param  __val  Value to be assigned.
+        -:  460:       *
+        -:  461:       *  This function fills a %vector with @a __n copies of the given
+        -:  462:       *  value.  Note that the assignment completely changes the
+        -:  463:       *  %vector and that the resulting %vector's size is the same as
+        -:  464:       *  the number of elements assigned.  Old data may be lost.
+        -:  465:       */
+        -:  466:      void
+        -:  467:      assign(size_type __n, const value_type& __val)
+        -:  468:      { _M_fill_assign(__n, __val); }
+        -:  469:
+        -:  470:      /**
+        -:  471:       *  @brief  Assigns a range to a %vector.
+        -:  472:       *  @param  __first  An input iterator.
+        -:  473:       *  @param  __last   An input iterator.
+        -:  474:       *
+        -:  475:       *  This function fills a %vector with copies of the elements in the
+        -:  476:       *  range [__first,__last).
+        -:  477:       *
+        -:  478:       *  Note that the assignment completely changes the %vector and
+        -:  479:       *  that the resulting %vector's size is the same as the number
+        -:  480:       *  of elements assigned.  Old data may be lost.
+        -:  481:       */
+        -:  482:      template<typename _InputIterator>
+        -:  483:        void
+        -:  484:        assign(_InputIterator __first, _InputIterator __last)
+        -:  485:        {
+        -:  486:	  // Check whether it's an integral type.  If so, it's not an iterator.
+        -:  487:	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
+        -:  488:	  _M_assign_dispatch(__first, __last, _Integral());
+        -:  489:	}
+        -:  490:
+        -:  491:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  492:      /**
+        -:  493:       *  @brief  Assigns an initializer list to a %vector.
+        -:  494:       *  @param  __l  An initializer_list.
+        -:  495:       *
+        -:  496:       *  This function fills a %vector with copies of the elements in the
+        -:  497:       *  initializer list @a __l.
+        -:  498:       *
+        -:  499:       *  Note that the assignment completely changes the %vector and
+        -:  500:       *  that the resulting %vector's size is the same as the number
+        -:  501:       *  of elements assigned.  Old data may be lost.
+        -:  502:       */
+        -:  503:      void
+        -:  504:      assign(initializer_list<value_type> __l)
+        -:  505:      { this->assign(__l.begin(), __l.end()); }
+        -:  506:#endif
+        -:  507:
+        -:  508:      /// Get a copy of the memory allocation object.
+        -:  509:      using _Base::get_allocator;
+        -:  510:
+        -:  511:      // iterators
+        -:  512:      /**
+        -:  513:       *  Returns a read/write iterator that points to the first
+        -:  514:       *  element in the %vector.  Iteration is done in ordinary
+        -:  515:       *  element order.
+        -:  516:       */
+        -:  517:      iterator
+        -:  518:      begin() _GLIBCXX_NOEXCEPT
+        -:  519:      { return iterator(this->_M_impl._M_start); }
+        -:  520:
+        -:  521:      /**
+        -:  522:       *  Returns a read-only (constant) iterator that points to the
+        -:  523:       *  first element in the %vector.  Iteration is done in ordinary
+        -:  524:       *  element order.
+        -:  525:       */
+        -:  526:      const_iterator
+        -:  527:      begin() const _GLIBCXX_NOEXCEPT
+        -:  528:      { return const_iterator(this->_M_impl._M_start); }
+        -:  529:
+        -:  530:      /**
+        -:  531:       *  Returns a read/write iterator that points one past the last
+        -:  532:       *  element in the %vector.  Iteration is done in ordinary
+        -:  533:       *  element order.
+        -:  534:       */
+        -:  535:      iterator
+        -:  536:      end() _GLIBCXX_NOEXCEPT
+        -:  537:      { return iterator(this->_M_impl._M_finish); }
+        -:  538:
+        -:  539:      /**
+        -:  540:       *  Returns a read-only (constant) iterator that points one past
+        -:  541:       *  the last element in the %vector.  Iteration is done in
+        -:  542:       *  ordinary element order.
+        -:  543:       */
+        -:  544:      const_iterator
+        -:  545:      end() const _GLIBCXX_NOEXCEPT
+        -:  546:      { return const_iterator(this->_M_impl._M_finish); }
+        -:  547:
+        -:  548:      /**
+        -:  549:       *  Returns a read/write reverse iterator that points to the
+        -:  550:       *  last element in the %vector.  Iteration is done in reverse
+        -:  551:       *  element order.
+        -:  552:       */
+        -:  553:      reverse_iterator
+        -:  554:      rbegin() _GLIBCXX_NOEXCEPT
+        -:  555:      { return reverse_iterator(end()); }
+        -:  556:
+        -:  557:      /**
+        -:  558:       *  Returns a read-only (constant) reverse iterator that points
+        -:  559:       *  to the last element in the %vector.  Iteration is done in
+        -:  560:       *  reverse element order.
+        -:  561:       */
+        -:  562:      const_reverse_iterator
+        -:  563:      rbegin() const _GLIBCXX_NOEXCEPT
+        -:  564:      { return const_reverse_iterator(end()); }
+        -:  565:
+        -:  566:      /**
+        -:  567:       *  Returns a read/write reverse iterator that points to one
+        -:  568:       *  before the first element in the %vector.  Iteration is done
+        -:  569:       *  in reverse element order.
+        -:  570:       */
+        -:  571:      reverse_iterator
+        -:  572:      rend() _GLIBCXX_NOEXCEPT
+        -:  573:      { return reverse_iterator(begin()); }
+        -:  574:
+        -:  575:      /**
+        -:  576:       *  Returns a read-only (constant) reverse iterator that points
+        -:  577:       *  to one before the first element in the %vector.  Iteration
+        -:  578:       *  is done in reverse element order.
+        -:  579:       */
+        -:  580:      const_reverse_iterator
+        -:  581:      rend() const _GLIBCXX_NOEXCEPT
+        -:  582:      { return const_reverse_iterator(begin()); }
+        -:  583:
+        -:  584:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  585:      /**
+        -:  586:       *  Returns a read-only (constant) iterator that points to the
+        -:  587:       *  first element in the %vector.  Iteration is done in ordinary
+        -:  588:       *  element order.
+        -:  589:       */
+        -:  590:      const_iterator
+        -:  591:      cbegin() const noexcept
+        -:  592:      { return const_iterator(this->_M_impl._M_start); }
+        -:  593:
+        -:  594:      /**
+        -:  595:       *  Returns a read-only (constant) iterator that points one past
+        -:  596:       *  the last element in the %vector.  Iteration is done in
+        -:  597:       *  ordinary element order.
+        -:  598:       */
+        -:  599:      const_iterator
+        -:  600:      cend() const noexcept
+        -:  601:      { return const_iterator(this->_M_impl._M_finish); }
+        -:  602:
+        -:  603:      /**
+        -:  604:       *  Returns a read-only (constant) reverse iterator that points
+        -:  605:       *  to the last element in the %vector.  Iteration is done in
+        -:  606:       *  reverse element order.
+        -:  607:       */
+        -:  608:      const_reverse_iterator
+        -:  609:      crbegin() const noexcept
+        -:  610:      { return const_reverse_iterator(end()); }
+        -:  611:
+        -:  612:      /**
+        -:  613:       *  Returns a read-only (constant) reverse iterator that points
+        -:  614:       *  to one before the first element in the %vector.  Iteration
+        -:  615:       *  is done in reverse element order.
+        -:  616:       */
+        -:  617:      const_reverse_iterator
+        -:  618:      crend() const noexcept
+        -:  619:      { return const_reverse_iterator(begin()); }
+        -:  620:#endif
+        -:  621:
+        -:  622:      // [23.2.4.2] capacity
+        -:  623:      /**  Returns the number of elements in the %vector.  */
+        -:  624:      size_type
+function _ZNKSt6vectorImSaImEE4sizeEv called 160 returned 100% blocks executed 100%
+function _ZNKSt6vectorIiSaIiEE4sizeEv called 160 returned 100% blocks executed 100%
+function _ZNKSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE4sizeEv called 186352 returned 100% blocks executed 100%
+function _ZNKSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE4sizeEv called 27152 returned 100% blocks executed 100%
+   213824:  625:      size() const _GLIBCXX_NOEXCEPT
+   213824:  626:      { return size_type(this->_M_impl._M_finish - this->_M_impl._M_start); }
+        -:  627:
+        -:  628:      /**  Returns the size() of the largest possible %vector.  */
+        -:  629:      size_type
+function _ZNKSt6vectorImSaImEE8max_sizeEv called 64 returned 100% blocks executed 100%
+function _ZNKSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE8max_sizeEv called 896 returned 100% blocks executed 100%
+function _ZNKSt6vectorIiSaIiEE8max_sizeEv called 64 returned 100% blocks executed 100%
+function _ZNKSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE8max_sizeEv called 896 returned 100% blocks executed 100%
+     1920:  630:      max_size() const _GLIBCXX_NOEXCEPT
+     1920:  631:      { return _Alloc_traits::max_size(_M_get_Tp_allocator()); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+call    6 returned 100%
+call    7 returned 100%
+        -:  632:
+        -:  633:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  634:      /**
+        -:  635:       *  @brief  Resizes the %vector to the specified number of elements.
+        -:  636:       *  @param  __new_size  Number of elements the %vector should contain.
+        -:  637:       *
+        -:  638:       *  This function will %resize the %vector to the specified
+        -:  639:       *  number of elements.  If the number is smaller than the
+        -:  640:       *  %vector's current size the %vector is truncated, otherwise
+        -:  641:       *  default constructed elements are appended.
+        -:  642:       */
+        -:  643:      void
+function _ZNSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE6resizeEm called 24744 returned 100% blocks executed 63%
+    24744:  644:      resize(size_type __new_size)
+        -:  645:      {
+    24744:  646:	if (__new_size > size())
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+    24744:  647:	  _M_default_append(__new_size - size());
+call    0 returned 100%
+call    1 returned 100%
+    #####:  648:	else if (__new_size < size())
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  649:	  _M_erase_at_end(this->_M_impl._M_start + __new_size);
+call    0 never executed
+    24744:  650:      }
+        -:  651:
+        -:  652:      /**
+        -:  653:       *  @brief  Resizes the %vector to the specified number of elements.
+        -:  654:       *  @param  __new_size  Number of elements the %vector should contain.
+        -:  655:       *  @param  __x  Data with which new elements should be populated.
+        -:  656:       *
+        -:  657:       *  This function will %resize the %vector to the specified
+        -:  658:       *  number of elements.  If the number is smaller than the
+        -:  659:       *  %vector's current size the %vector is truncated, otherwise
+        -:  660:       *  the %vector is extended and new elements are populated with
+        -:  661:       *  given data.
+        -:  662:       */
+        -:  663:      void
+        -:  664:      resize(size_type __new_size, const value_type& __x)
+        -:  665:      {
+        -:  666:	if (__new_size > size())
+        -:  667:	  insert(end(), __new_size - size(), __x);
+        -:  668:	else if (__new_size < size())
+        -:  669:	  _M_erase_at_end(this->_M_impl._M_start + __new_size);
+        -:  670:      }
+        -:  671:#else
+        -:  672:      /**
+        -:  673:       *  @brief  Resizes the %vector to the specified number of elements.
+        -:  674:       *  @param  __new_size  Number of elements the %vector should contain.
+        -:  675:       *  @param  __x  Data with which new elements should be populated.
+        -:  676:       *
+        -:  677:       *  This function will %resize the %vector to the specified
+        -:  678:       *  number of elements.  If the number is smaller than the
+        -:  679:       *  %vector's current size the %vector is truncated, otherwise
+        -:  680:       *  the %vector is extended and new elements are populated with
+        -:  681:       *  given data.
+        -:  682:       */
+        -:  683:      void
+        -:  684:      resize(size_type __new_size, value_type __x = value_type())
+        -:  685:      {
+        -:  686:	if (__new_size > size())
+        -:  687:	  insert(end(), __new_size - size(), __x);
+        -:  688:	else if (__new_size < size())
+        -:  689:	  _M_erase_at_end(this->_M_impl._M_start + __new_size);
+        -:  690:      }
+        -:  691:#endif
+        -:  692:
+        -:  693:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  694:      /**  A non-binding request to reduce capacity() to size().  */
+        -:  695:      void
+        -:  696:      shrink_to_fit()
+        -:  697:      { _M_shrink_to_fit(); }
+        -:  698:#endif
+        -:  699:
+        -:  700:      /**
+        -:  701:       *  Returns the total number of elements that the %vector can
+        -:  702:       *  hold before needing to allocate more memory.
+        -:  703:       */
+        -:  704:      size_type
+        -:  705:      capacity() const _GLIBCXX_NOEXCEPT
+        -:  706:      { return size_type(this->_M_impl._M_end_of_storage
+        -:  707:			 - this->_M_impl._M_start); }
+        -:  708:
+        -:  709:      /**
+        -:  710:       *  Returns true if the %vector is empty.  (Thus begin() would
+        -:  711:       *  equal end().)
+        -:  712:       */
+        -:  713:      bool
+        -:  714:      empty() const _GLIBCXX_NOEXCEPT
+        -:  715:      { return begin() == end(); }
+        -:  716:
+        -:  717:      /**
+        -:  718:       *  @brief  Attempt to preallocate enough memory for specified number of
+        -:  719:       *          elements.
+        -:  720:       *  @param  __n  Number of elements required.
+        -:  721:       *  @throw  std::length_error  If @a n exceeds @c max_size().
+        -:  722:       *
+        -:  723:       *  This function attempts to reserve enough memory for the
+        -:  724:       *  %vector to hold the specified number of elements.  If the
+        -:  725:       *  number requested is more than max_size(), length_error is
+        -:  726:       *  thrown.
+        -:  727:       *
+        -:  728:       *  The advantage of this function is that if optimal code is a
+        -:  729:       *  necessity and the user can determine the number of elements
+        -:  730:       *  that will be required, the user can reserve the memory in
+        -:  731:       *  %advance, and thus prevent a possible reallocation of memory
+        -:  732:       *  and copying of %vector data.
+        -:  733:       */
+        -:  734:      void
+        -:  735:      reserve(size_type __n);
+        -:  736:
+        -:  737:      // element access
+        -:  738:      /**
+        -:  739:       *  @brief  Subscript access to the data contained in the %vector.
+        -:  740:       *  @param __n The index of the element for which data should be
+        -:  741:       *  accessed.
+        -:  742:       *  @return  Read/write reference to data.
+        -:  743:       *
+        -:  744:       *  This operator allows for easy, array-style, data access.
+        -:  745:       *  Note that data access with this operator is unchecked and
+        -:  746:       *  out_of_range lookups are not defined. (For checked lookups
+        -:  747:       *  see at().)
+        -:  748:       */
+        -:  749:      reference
+function _ZNSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EEixEm called 60304 returned 100% blocks executed 100%
+function _ZNSt6vectorImSaImEEixEm called 400 returned 100% blocks executed 100%
+function _ZNSt6vectorIiSaIiEEixEm called 400 returned 100% blocks executed 100%
+function _ZNSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EEixEm called 126940 returned 100% blocks executed 100%
+   188044:  750:      operator[](size_type __n)
+   188044:  751:      { return *(this->_M_impl._M_start + __n); }
+        -:  752:
+        -:  753:      /**
+        -:  754:       *  @brief  Subscript access to the data contained in the %vector.
+        -:  755:       *  @param __n The index of the element for which data should be
+        -:  756:       *  accessed.
+        -:  757:       *  @return  Read-only (constant) reference to data.
+        -:  758:       *
+        -:  759:       *  This operator allows for easy, array-style, data access.
+        -:  760:       *  Note that data access with this operator is unchecked and
+        -:  761:       *  out_of_range lookups are not defined. (For checked lookups
+        -:  762:       *  see at().)
+        -:  763:       */
+        -:  764:      const_reference
+function _ZNKSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EEixEm called 4148 returned 100% blocks executed 100%
+function _ZNKSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EEixEm called 136 returned 100% blocks executed 100%
+     4284:  765:      operator[](size_type __n) const
+     4284:  766:      { return *(this->_M_impl._M_start + __n); }
+        -:  767:
+        -:  768:    protected:
+        -:  769:      /// Safety check used only from at().
+        -:  770:      void
+        -:  771:      _M_range_check(size_type __n) const
+        -:  772:      {
+        -:  773:	if (__n >= this->size())
+        -:  774:	  __throw_out_of_range(__N("vector::_M_range_check"));
+        -:  775:      }
+        -:  776:
+        -:  777:    public:
+        -:  778:      /**
+        -:  779:       *  @brief  Provides access to the data contained in the %vector.
+        -:  780:       *  @param __n The index of the element for which data should be
+        -:  781:       *  accessed.
+        -:  782:       *  @return  Read/write reference to data.
+        -:  783:       *  @throw  std::out_of_range  If @a __n is an invalid index.
+        -:  784:       *
+        -:  785:       *  This function provides for safer data access.  The parameter
+        -:  786:       *  is first checked that it is in the range of the vector.  The
+        -:  787:       *  function throws out_of_range if the check fails.
+        -:  788:       */
+        -:  789:      reference
+        -:  790:      at(size_type __n)
+        -:  791:      {
+        -:  792:	_M_range_check(__n);
+        -:  793:	return (*this)[__n]; 
+        -:  794:      }
+        -:  795:
+        -:  796:      /**
+        -:  797:       *  @brief  Provides access to the data contained in the %vector.
+        -:  798:       *  @param __n The index of the element for which data should be
+        -:  799:       *  accessed.
+        -:  800:       *  @return  Read-only (constant) reference to data.
+        -:  801:       *  @throw  std::out_of_range  If @a __n is an invalid index.
+        -:  802:       *
+        -:  803:       *  This function provides for safer data access.  The parameter
+        -:  804:       *  is first checked that it is in the range of the vector.  The
+        -:  805:       *  function throws out_of_range if the check fails.
+        -:  806:       */
+        -:  807:      const_reference
+        -:  808:      at(size_type __n) const
+        -:  809:      {
+        -:  810:	_M_range_check(__n);
+        -:  811:	return (*this)[__n];
+        -:  812:      }
+        -:  813:
+        -:  814:      /**
+        -:  815:       *  Returns a read/write reference to the data at the first
+        -:  816:       *  element of the %vector.
+        -:  817:       */
+        -:  818:      reference
+        -:  819:      front()
+        -:  820:      { return *begin(); }
+        -:  821:
+        -:  822:      /**
+        -:  823:       *  Returns a read-only (constant) reference to the data at the first
+        -:  824:       *  element of the %vector.
+        -:  825:       */
+        -:  826:      const_reference
+        -:  827:      front() const
+        -:  828:      { return *begin(); }
+        -:  829:
+        -:  830:      /**
+        -:  831:       *  Returns a read/write reference to the data at the last
+        -:  832:       *  element of the %vector.
+        -:  833:       */
+        -:  834:      reference
+        -:  835:      back()
+        -:  836:      { return *(end() - 1); }
+        -:  837:      
+        -:  838:      /**
+        -:  839:       *  Returns a read-only (constant) reference to the data at the
+        -:  840:       *  last element of the %vector.
+        -:  841:       */
+        -:  842:      const_reference
+        -:  843:      back() const
+        -:  844:      { return *(end() - 1); }
+        -:  845:
+        -:  846:      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -:  847:      // DR 464. Suggestion for new member functions in standard containers.
+        -:  848:      // data access
+        -:  849:      /**
+        -:  850:       *   Returns a pointer such that [data(), data() + size()) is a valid
+        -:  851:       *   range.  For a non-empty %vector, data() == &front().
+        -:  852:       */
+        -:  853:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  854:      _Tp*
+        -:  855:#else
+        -:  856:      pointer
+        -:  857:#endif
+        -:  858:      data() _GLIBCXX_NOEXCEPT
+        -:  859:      { return std::__addressof(front()); }
+        -:  860:
+        -:  861:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  862:      const _Tp*
+        -:  863:#else
+        -:  864:      const_pointer
+        -:  865:#endif
+        -:  866:      data() const _GLIBCXX_NOEXCEPT
+        -:  867:      { return std::__addressof(front()); }
+        -:  868:
+        -:  869:      // [23.2.4.3] modifiers
+        -:  870:      /**
+        -:  871:       *  @brief  Add data to the end of the %vector.
+        -:  872:       *  @param  __x  Data to be added.
+        -:  873:       *
+        -:  874:       *  This is a typical stack operation.  The function creates an
+        -:  875:       *  element at the end of the %vector and assigns the given data
+        -:  876:       *  to it.  Due to the nature of a %vector this operation can be
+        -:  877:       *  done in constant time if the %vector has preallocated space
+        -:  878:       *  available.
+        -:  879:       */
+        -:  880:      void
+        -:  881:      push_back(const value_type& __x)
+        -:  882:      {
+        -:  883:	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
+        -:  884:	  {
+        -:  885:	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
+        -:  886:	                             __x);
+        -:  887:	    ++this->_M_impl._M_finish;
+        -:  888:	  }
+        -:  889:	else
+        -:  890:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  891:	  _M_emplace_back_aux(__x);
+        -:  892:#else
+        -:  893:	  _M_insert_aux(end(), __x);
+        -:  894:#endif
+        -:  895:      }
+        -:  896:
+        -:  897:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  898:      void
+function _ZNSt6vectorImSaImEE9push_backEOm called 400 returned 100% blocks executed 100%
+function _ZNSt6vectorIiSaIiEE9push_backEOi called 400 returned 100% blocks executed 100%
+function _ZNSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE9push_backEOS6_ called 24744 returned 100% blocks executed 100%
+    25544:  899:      push_back(value_type&& __x)
+    25544:  900:      { emplace_back(std::move(__x)); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+        -:  901:
+        -:  902:      template<typename... _Args>
+        -:  903:        void
+        -:  904:        emplace_back(_Args&&... __args);
+        -:  905:#endif
+        -:  906:
+        -:  907:      /**
+        -:  908:       *  @brief  Removes last element.
+        -:  909:       *
+        -:  910:       *  This is a typical stack operation. It shrinks the %vector by one.
+        -:  911:       *
+        -:  912:       *  Note that no data is returned, and if the last element's
+        -:  913:       *  data is needed, it should be retrieved before pop_back() is
+        -:  914:       *  called.
+        -:  915:       */
+        -:  916:      void
+        -:  917:      pop_back()
+        -:  918:      {
+        -:  919:	--this->_M_impl._M_finish;
+        -:  920:	_Alloc_traits::destroy(this->_M_impl, this->_M_impl._M_finish);
+        -:  921:      }
+        -:  922:
+        -:  923:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  924:      /**
+        -:  925:       *  @brief  Inserts an object in %vector before specified iterator.
+        -:  926:       *  @param  __position  An iterator into the %vector.
+        -:  927:       *  @param  __args  Arguments.
+        -:  928:       *  @return  An iterator that points to the inserted data.
+        -:  929:       *
+        -:  930:       *  This function will insert an object of type T constructed
+        -:  931:       *  with T(std::forward<Args>(args)...) before the specified location.
+        -:  932:       *  Note that this kind of operation could be expensive for a %vector
+        -:  933:       *  and if it is frequently used the user should consider using
+        -:  934:       *  std::list.
+        -:  935:       */
+        -:  936:      template<typename... _Args>
+        -:  937:        iterator
+        -:  938:        emplace(iterator __position, _Args&&... __args);
+        -:  939:#endif
+        -:  940:
+        -:  941:      /**
+        -:  942:       *  @brief  Inserts given value into %vector before specified iterator.
+        -:  943:       *  @param  __position  An iterator into the %vector.
+        -:  944:       *  @param  __x  Data to be inserted.
+        -:  945:       *  @return  An iterator that points to the inserted data.
+        -:  946:       *
+        -:  947:       *  This function will insert a copy of the given value before
+        -:  948:       *  the specified location.  Note that this kind of operation
+        -:  949:       *  could be expensive for a %vector and if it is frequently
+        -:  950:       *  used the user should consider using std::list.
+        -:  951:       */
+        -:  952:      iterator
+        -:  953:      insert(iterator __position, const value_type& __x);
+        -:  954:
+        -:  955:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -:  956:      /**
+        -:  957:       *  @brief  Inserts given rvalue into %vector before specified iterator.
+        -:  958:       *  @param  __position  An iterator into the %vector.
+        -:  959:       *  @param  __x  Data to be inserted.
+        -:  960:       *  @return  An iterator that points to the inserted data.
+        -:  961:       *
+        -:  962:       *  This function will insert a copy of the given rvalue before
+        -:  963:       *  the specified location.  Note that this kind of operation
+        -:  964:       *  could be expensive for a %vector and if it is frequently
+        -:  965:       *  used the user should consider using std::list.
+        -:  966:       */
+        -:  967:      iterator
+        -:  968:      insert(iterator __position, value_type&& __x)
+        -:  969:      { return emplace(__position, std::move(__x)); }
+        -:  970:
+        -:  971:      /**
+        -:  972:       *  @brief  Inserts an initializer_list into the %vector.
+        -:  973:       *  @param  __position  An iterator into the %vector.
+        -:  974:       *  @param  __l  An initializer_list.
+        -:  975:       *
+        -:  976:       *  This function will insert copies of the data in the 
+        -:  977:       *  initializer_list @a l into the %vector before the location
+        -:  978:       *  specified by @a position.
+        -:  979:       *
+        -:  980:       *  Note that this kind of operation could be expensive for a
+        -:  981:       *  %vector and if it is frequently used the user should
+        -:  982:       *  consider using std::list.
+        -:  983:       */
+        -:  984:      void
+        -:  985:      insert(iterator __position, initializer_list<value_type> __l)
+        -:  986:      { this->insert(__position, __l.begin(), __l.end()); }
+        -:  987:#endif
+        -:  988:
+        -:  989:      /**
+        -:  990:       *  @brief  Inserts a number of copies of given data into the %vector.
+        -:  991:       *  @param  __position  An iterator into the %vector.
+        -:  992:       *  @param  __n  Number of elements to be inserted.
+        -:  993:       *  @param  __x  Data to be inserted.
+        -:  994:       *
+        -:  995:       *  This function will insert a specified number of copies of
+        -:  996:       *  the given data before the location specified by @a position.
+        -:  997:       *
+        -:  998:       *  Note that this kind of operation could be expensive for a
+        -:  999:       *  %vector and if it is frequently used the user should
+        -: 1000:       *  consider using std::list.
+        -: 1001:       */
+        -: 1002:      void
+        -: 1003:      insert(iterator __position, size_type __n, const value_type& __x)
+        -: 1004:      { _M_fill_insert(__position, __n, __x); }
+        -: 1005:
+        -: 1006:      /**
+        -: 1007:       *  @brief  Inserts a range into the %vector.
+        -: 1008:       *  @param  __position  An iterator into the %vector.
+        -: 1009:       *  @param  __first  An input iterator.
+        -: 1010:       *  @param  __last   An input iterator.
+        -: 1011:       *
+        -: 1012:       *  This function will insert copies of the data in the range
+        -: 1013:       *  [__first,__last) into the %vector before the location specified
+        -: 1014:       *  by @a pos.
+        -: 1015:       *
+        -: 1016:       *  Note that this kind of operation could be expensive for a
+        -: 1017:       *  %vector and if it is frequently used the user should
+        -: 1018:       *  consider using std::list.
+        -: 1019:       */
+        -: 1020:      template<typename _InputIterator>
+        -: 1021:        void
+        -: 1022:        insert(iterator __position, _InputIterator __first,
+        -: 1023:	       _InputIterator __last)
+        -: 1024:        {
+        -: 1025:	  // Check whether it's an integral type.  If so, it's not an iterator.
+        -: 1026:	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
+        -: 1027:	  _M_insert_dispatch(__position, __first, __last, _Integral());
+        -: 1028:	}
+        -: 1029:
+        -: 1030:      /**
+        -: 1031:       *  @brief  Remove element at given position.
+        -: 1032:       *  @param  __position  Iterator pointing to element to be erased.
+        -: 1033:       *  @return  An iterator pointing to the next element (or end()).
+        -: 1034:       *
+        -: 1035:       *  This function will erase the element at the given position and thus
+        -: 1036:       *  shorten the %vector by one.
+        -: 1037:       *
+        -: 1038:       *  Note This operation could be expensive and if it is
+        -: 1039:       *  frequently used the user should consider using std::list.
+        -: 1040:       *  The user is also cautioned that this function only erases
+        -: 1041:       *  the element, and that if the element is itself a pointer,
+        -: 1042:       *  the pointed-to memory is not touched in any way.  Managing
+        -: 1043:       *  the pointer is the user's responsibility.
+        -: 1044:       */
+        -: 1045:      iterator
+        -: 1046:      erase(iterator __position);
+        -: 1047:
+        -: 1048:      /**
+        -: 1049:       *  @brief  Remove a range of elements.
+        -: 1050:       *  @param  __first  Iterator pointing to the first element to be erased.
+        -: 1051:       *  @param  __last  Iterator pointing to one past the last element to be
+        -: 1052:       *                  erased.
+        -: 1053:       *  @return  An iterator pointing to the element pointed to by @a __last
+        -: 1054:       *           prior to erasing (or end()).
+        -: 1055:       *
+        -: 1056:       *  This function will erase the elements in the range
+        -: 1057:       *  [__first,__last) and shorten the %vector accordingly.
+        -: 1058:       *
+        -: 1059:       *  Note This operation could be expensive and if it is
+        -: 1060:       *  frequently used the user should consider using std::list.
+        -: 1061:       *  The user is also cautioned that this function only erases
+        -: 1062:       *  the elements, and that if the elements themselves are
+        -: 1063:       *  pointers, the pointed-to memory is not touched in any way.
+        -: 1064:       *  Managing the pointer is the user's responsibility.
+        -: 1065:       */
+        -: 1066:      iterator
+        -: 1067:      erase(iterator __first, iterator __last);
+        -: 1068:
+        -: 1069:      /**
+        -: 1070:       *  @brief  Swaps data with another %vector.
+        -: 1071:       *  @param  __x  A %vector of the same element and allocator types.
+        -: 1072:       *
+        -: 1073:       *  This exchanges the elements between two vectors in constant time.
+        -: 1074:       *  (Three pointers, so it should be quite fast.)
+        -: 1075:       *  Note that the global std::swap() function is specialized such that
+        -: 1076:       *  std::swap(v1,v2) will feed to this function.
+        -: 1077:       */
+        -: 1078:      void
+        -: 1079:      swap(vector& __x)
+        -: 1080:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -: 1081:			noexcept(_Alloc_traits::_S_nothrow_swap())
+        -: 1082:#endif
+        -: 1083:      {
+        -: 1084:	this->_M_impl._M_swap_data(__x._M_impl);
+        -: 1085:	_Alloc_traits::_S_on_swap(_M_get_Tp_allocator(),
+        -: 1086:	                          __x._M_get_Tp_allocator());
+        -: 1087:      }
+        -: 1088:
+        -: 1089:      /**
+        -: 1090:       *  Erases all the elements.  Note that this function only erases the
+        -: 1091:       *  elements, and that if the elements themselves are pointers, the
+        -: 1092:       *  pointed-to memory is not touched in any way.  Managing the pointer is
+        -: 1093:       *  the user's responsibility.
+        -: 1094:       */
+        -: 1095:      void
+        -: 1096:      clear() _GLIBCXX_NOEXCEPT
+        -: 1097:      { _M_erase_at_end(this->_M_impl._M_start); }
+        -: 1098:
+        -: 1099:    protected:
+        -: 1100:      /**
+        -: 1101:       *  Memory expansion handler.  Uses the member allocation function to
+        -: 1102:       *  obtain @a n bytes of memory, and then copies [first,last) into it.
+        -: 1103:       */
+        -: 1104:      template<typename _ForwardIterator>
+        -: 1105:        pointer
+        -: 1106:        _M_allocate_and_copy(size_type __n,
+        -: 1107:			     _ForwardIterator __first, _ForwardIterator __last)
+        -: 1108:        {
+        -: 1109:	  pointer __result = this->_M_allocate(__n);
+        -: 1110:	  __try
+        -: 1111:	    {
+        -: 1112:	      std::__uninitialized_copy_a(__first, __last, __result,
+        -: 1113:					  _M_get_Tp_allocator());
+        -: 1114:	      return __result;
+        -: 1115:	    }
+        -: 1116:	  __catch(...)
+        -: 1117:	    {
+        -: 1118:	      _M_deallocate(__result, __n);
+        -: 1119:	      __throw_exception_again;
+        -: 1120:	    }
+        -: 1121:	}
+        -: 1122:
+        -: 1123:
+        -: 1124:      // Internal constructor functions follow.
+        -: 1125:
+        -: 1126:      // Called by the range constructor to implement [23.1.1]/9
+        -: 1127:
+        -: 1128:      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -: 1129:      // 438. Ambiguity in the "do the right thing" clause
+        -: 1130:      template<typename _Integer>
+        -: 1131:        void
+        -: 1132:        _M_initialize_dispatch(_Integer __n, _Integer __value, __true_type)
+        -: 1133:        {
+        -: 1134:	  this->_M_impl._M_start = _M_allocate(static_cast<size_type>(__n));
+        -: 1135:	  this->_M_impl._M_end_of_storage =
+        -: 1136:	    this->_M_impl._M_start + static_cast<size_type>(__n);
+        -: 1137:	  _M_fill_initialize(static_cast<size_type>(__n), __value);
+        -: 1138:	}
+        -: 1139:
+        -: 1140:      // Called by the range constructor to implement [23.1.1]/9
+        -: 1141:      template<typename _InputIterator>
+        -: 1142:        void
+        -: 1143:        _M_initialize_dispatch(_InputIterator __first, _InputIterator __last,
+        -: 1144:			       __false_type)
+        -: 1145:        {
+        -: 1146:	  typedef typename std::iterator_traits<_InputIterator>::
+        -: 1147:	    iterator_category _IterCategory;
+        -: 1148:	  _M_range_initialize(__first, __last, _IterCategory());
+        -: 1149:	}
+        -: 1150:
+        -: 1151:      // Called by the second initialize_dispatch above
+        -: 1152:      template<typename _InputIterator>
+        -: 1153:        void
+        -: 1154:        _M_range_initialize(_InputIterator __first,
+        -: 1155:			    _InputIterator __last, std::input_iterator_tag)
+        -: 1156:        {
+        -: 1157:	  for (; __first != __last; ++__first)
+        -: 1158:	    push_back(*__first);
+        -: 1159:	}
+        -: 1160:
+        -: 1161:      // Called by the second initialize_dispatch above
+        -: 1162:      template<typename _ForwardIterator>
+        -: 1163:        void
+        -: 1164:        _M_range_initialize(_ForwardIterator __first,
+        -: 1165:			    _ForwardIterator __last, std::forward_iterator_tag)
+        -: 1166:        {
+        -: 1167:	  const size_type __n = std::distance(__first, __last);
+        -: 1168:	  this->_M_impl._M_start = this->_M_allocate(__n);
+        -: 1169:	  this->_M_impl._M_end_of_storage = this->_M_impl._M_start + __n;
+        -: 1170:	  this->_M_impl._M_finish =
+        -: 1171:	    std::__uninitialized_copy_a(__first, __last,
+        -: 1172:					this->_M_impl._M_start,
+        -: 1173:					_M_get_Tp_allocator());
+        -: 1174:	}
+        -: 1175:
+        -: 1176:      // Called by the first initialize_dispatch above and by the
+        -: 1177:      // vector(n,value,a) constructor.
+        -: 1178:      void
+        -: 1179:      _M_fill_initialize(size_type __n, const value_type& __value)
+        -: 1180:      {
+        -: 1181:	std::__uninitialized_fill_n_a(this->_M_impl._M_start, __n, __value, 
+        -: 1182:				      _M_get_Tp_allocator());
+        -: 1183:	this->_M_impl._M_finish = this->_M_impl._M_end_of_storage;
+        -: 1184:      }
+        -: 1185:
+        -: 1186:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -: 1187:      // Called by the vector(n) constructor.
+        -: 1188:      void
+        -: 1189:      _M_default_initialize(size_type __n)
+        -: 1190:      {
+        -: 1191:	std::__uninitialized_default_n_a(this->_M_impl._M_start, __n, 
+        -: 1192:					 _M_get_Tp_allocator());
+        -: 1193:	this->_M_impl._M_finish = this->_M_impl._M_end_of_storage;
+        -: 1194:      }
+        -: 1195:#endif
+        -: 1196:
+        -: 1197:      // Internal assign functions follow.  The *_aux functions do the actual
+        -: 1198:      // assignment work for the range versions.
+        -: 1199:
+        -: 1200:      // Called by the range assign to implement [23.1.1]/9
+        -: 1201:
+        -: 1202:      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -: 1203:      // 438. Ambiguity in the "do the right thing" clause
+        -: 1204:      template<typename _Integer>
+        -: 1205:        void
+        -: 1206:        _M_assign_dispatch(_Integer __n, _Integer __val, __true_type)
+        -: 1207:        { _M_fill_assign(__n, __val); }
+        -: 1208:
+        -: 1209:      // Called by the range assign to implement [23.1.1]/9
+        -: 1210:      template<typename _InputIterator>
+        -: 1211:        void
+        -: 1212:        _M_assign_dispatch(_InputIterator __first, _InputIterator __last,
+        -: 1213:			   __false_type)
+        -: 1214:        {
+        -: 1215:	  typedef typename std::iterator_traits<_InputIterator>::
+        -: 1216:	    iterator_category _IterCategory;
+        -: 1217:	  _M_assign_aux(__first, __last, _IterCategory());
+        -: 1218:	}
+        -: 1219:
+        -: 1220:      // Called by the second assign_dispatch above
+        -: 1221:      template<typename _InputIterator>
+        -: 1222:        void
+        -: 1223:        _M_assign_aux(_InputIterator __first, _InputIterator __last,
+        -: 1224:		      std::input_iterator_tag);
+        -: 1225:
+        -: 1226:      // Called by the second assign_dispatch above
+        -: 1227:      template<typename _ForwardIterator>
+        -: 1228:        void
+        -: 1229:        _M_assign_aux(_ForwardIterator __first, _ForwardIterator __last,
+        -: 1230:		      std::forward_iterator_tag);
+        -: 1231:
+        -: 1232:      // Called by assign(n,t), and the range assign when it turns out
+        -: 1233:      // to be the same thing.
+        -: 1234:      void
+        -: 1235:      _M_fill_assign(size_type __n, const value_type& __val);
+        -: 1236:
+        -: 1237:
+        -: 1238:      // Internal insert functions follow.
+        -: 1239:
+        -: 1240:      // Called by the range insert to implement [23.1.1]/9
+        -: 1241:
+        -: 1242:      // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        -: 1243:      // 438. Ambiguity in the "do the right thing" clause
+        -: 1244:      template<typename _Integer>
+        -: 1245:        void
+        -: 1246:        _M_insert_dispatch(iterator __pos, _Integer __n, _Integer __val,
+        -: 1247:			   __true_type)
+        -: 1248:        { _M_fill_insert(__pos, __n, __val); }
+        -: 1249:
+        -: 1250:      // Called by the range insert to implement [23.1.1]/9
+        -: 1251:      template<typename _InputIterator>
+        -: 1252:        void
+        -: 1253:        _M_insert_dispatch(iterator __pos, _InputIterator __first,
+        -: 1254:			   _InputIterator __last, __false_type)
+        -: 1255:        {
+        -: 1256:	  typedef typename std::iterator_traits<_InputIterator>::
+        -: 1257:	    iterator_category _IterCategory;
+        -: 1258:	  _M_range_insert(__pos, __first, __last, _IterCategory());
+        -: 1259:	}
+        -: 1260:
+        -: 1261:      // Called by the second insert_dispatch above
+        -: 1262:      template<typename _InputIterator>
+        -: 1263:        void
+        -: 1264:        _M_range_insert(iterator __pos, _InputIterator __first,
+        -: 1265:			_InputIterator __last, std::input_iterator_tag);
+        -: 1266:
+        -: 1267:      // Called by the second insert_dispatch above
+        -: 1268:      template<typename _ForwardIterator>
+        -: 1269:        void
+        -: 1270:        _M_range_insert(iterator __pos, _ForwardIterator __first,
+        -: 1271:			_ForwardIterator __last, std::forward_iterator_tag);
+        -: 1272:
+        -: 1273:      // Called by insert(p,n,x), and the range insert when it turns out to be
+        -: 1274:      // the same thing.
+        -: 1275:      void
+        -: 1276:      _M_fill_insert(iterator __pos, size_type __n, const value_type& __x);
+        -: 1277:
+        -: 1278:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -: 1279:      // Called by resize(n).
+        -: 1280:      void
+        -: 1281:      _M_default_append(size_type __n);
+        -: 1282:
+        -: 1283:      bool
+        -: 1284:      _M_shrink_to_fit();
+        -: 1285:#endif
+        -: 1286:
+        -: 1287:      // Called by insert(p,x)
+        -: 1288:#ifndef __GXX_EXPERIMENTAL_CXX0X__
+        -: 1289:      void
+        -: 1290:      _M_insert_aux(iterator __position, const value_type& __x);
+        -: 1291:#else
+        -: 1292:      template<typename... _Args>
+        -: 1293:        void
+        -: 1294:        _M_insert_aux(iterator __position, _Args&&... __args);
+        -: 1295:
+        -: 1296:      template<typename... _Args>
+        -: 1297:        void
+        -: 1298:        _M_emplace_back_aux(_Args&&... __args);
+        -: 1299:#endif
+        -: 1300:
+        -: 1301:      // Called by the latter.
+        -: 1302:      size_type
+function _ZNKSt6vectorImSaImEE12_M_check_lenEmPKc called 32 returned 100% blocks executed 87%
+function _ZNKSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE12_M_check_lenEmPKc called 448 returned 100% blocks executed 87%
+function _ZNKSt6vectorIiSaIiEE12_M_check_lenEmPKc called 32 returned 100% blocks executed 87%
+function _ZNKSt6vectorISt3setISt4pairIiiESt4lessIS2_ESaIS2_EESaIS6_EE12_M_check_lenEmPKc called 448 returned 100% blocks executed 87%
+      960: 1303:      _M_check_len(size_type __n, const char* __s) const
+        -: 1304:      {
+      960: 1305:	if (max_size() - size() < __n)
+call    0 returned 100%
+call    1 returned 100%
+branch  2 taken 0% (fallthrough)
+branch  3 taken 100%
+call    4 returned 100%
+call    5 returned 100%
+branch  6 taken 0% (fallthrough)
+branch  7 taken 100%
+call    8 returned 100%
+call    9 returned 100%
+branch 10 taken 0% (fallthrough)
+branch 11 taken 100%
+call   12 returned 100%
+call   13 returned 100%
+branch 14 taken 0% (fallthrough)
+branch 15 taken 100%
+    #####: 1306:	  __throw_length_error(__N(__s));
+call    0 never executed
+call    1 never executed
+call    2 never executed
+call    3 never executed
+        -: 1307:
+      960: 1308:	const size_type __len = size() + std::max(size(), __n);
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+call    6 returned 100%
+call    7 returned 100%
+call    8 returned 100%
+call    9 returned 100%
+call   10 returned 100%
+call   11 returned 100%
+      960: 1309:	return (__len < size() || __len > max_size()) ? max_size() : __len;
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+call    3 returned 100%
+branch  4 taken 0% (fallthrough)
+branch  5 taken 100%
+call    6 never executed
+call    7 returned 100%
+branch  8 taken 100% (fallthrough)
+branch  9 taken 0%
+call   10 returned 100%
+branch 11 taken 0% (fallthrough)
+branch 12 taken 100%
+call   13 never executed
+call   14 returned 100%
+branch 15 taken 100% (fallthrough)
+branch 16 taken 0%
+call   17 returned 100%
+branch 18 taken 0% (fallthrough)
+branch 19 taken 100%
+call   20 never executed
+call   21 returned 100%
+branch 22 taken 100% (fallthrough)
+branch 23 taken 0%
+call   24 returned 100%
+branch 25 taken 0% (fallthrough)
+branch 26 taken 100%
+call   27 never executed
+        -: 1310:      }
+        -: 1311:
+        -: 1312:      // Internal erase functions follow.
+        -: 1313:
+        -: 1314:      // Called by erase(q1,q2), clear(), resize(), _M_fill_assign,
+        -: 1315:      // _M_assign_aux.
+        -: 1316:      void
+function _ZNSt6vectorIN5boost6detail12adj_list_genINS0_14adjacency_listINS0_4setSENS0_4vecSENS0_9directedSENS0_11no_propertyES7_S7_NS0_5listSEEES5_S4_S6_S7_S7_S7_S8_E6config13stored_vertexESaISC_EE15_M_erase_at_endEPSC_ called 0 returned 0% blocks executed 0%
+    #####: 1317:      _M_erase_at_end(pointer __pos)
+        -: 1318:      {
+    #####: 1319:	std::_Destroy(__pos, this->_M_impl._M_finish, _M_get_Tp_allocator());
+call    0 never executed
+call    1 never executed
+    #####: 1320:	this->_M_impl._M_finish = __pos;
+    #####: 1321:      }
+        -: 1322:
+        -: 1323:#ifdef __GXX_EXPERIMENTAL_CXX0X__
+        -: 1324:    private:
+        -: 1325:      // Constant-time move assignment when source object's memory can be
+        -: 1326:      // moved, either because the source's allocator will move too
+        -: 1327:      // or because the allocators are equal.
+        -: 1328:      void
+        -: 1329:      _M_move_assign(vector&& __x, std::true_type) noexcept
+        -: 1330:      {
+        -: 1331:	const vector __tmp(std::move(*this));
+        -: 1332:	this->_M_impl._M_swap_data(__x._M_impl);
+        -: 1333:	if (_Alloc_traits::_S_propagate_on_move_assign())
+        -: 1334:	  std::__alloc_on_move(_M_get_Tp_allocator(),
+        -: 1335:			       __x._M_get_Tp_allocator());
+        -: 1336:      }
+        -: 1337:
+        -: 1338:      // Do move assignment when it might not be possible to move source
+        -: 1339:      // object's memory, resulting in a linear-time operation.
+        -: 1340:      void
+        -: 1341:      _M_move_assign(vector&& __x, std::false_type)
+        -: 1342:      {
+        -: 1343:	if (__x._M_get_Tp_allocator() == this->_M_get_Tp_allocator())
+        -: 1344:	  _M_move_assign(std::move(__x), std::true_type());
+        -: 1345:	else
+        -: 1346:	  {
+        -: 1347:	    // The rvalue's allocator cannot be moved and is not equal,
+        -: 1348:	    // so we need to individually move each element.
+        -: 1349:	    this->assign(std::__make_move_if_noexcept_iterator(__x.begin()),
+        -: 1350:			 std::__make_move_if_noexcept_iterator(__x.end()));
+        -: 1351:	    __x.clear();
+        -: 1352:	  }
+        -: 1353:      }
+        -: 1354:#endif
+        -: 1355:    };
+        -: 1356:
+        -: 1357:
+        -: 1358:  /**
+        -: 1359:   *  @brief  Vector equality comparison.
+        -: 1360:   *  @param  __x  A %vector.
+        -: 1361:   *  @param  __y  A %vector of the same type as @a __x.
+        -: 1362:   *  @return  True iff the size and elements of the vectors are equal.
+        -: 1363:   *
+        -: 1364:   *  This is an equivalence relation.  It is linear in the size of the
+        -: 1365:   *  vectors.  Vectors are considered equivalent if their sizes are equal,
+        -: 1366:   *  and if corresponding elements compare equal.
+        -: 1367:  */
+        -: 1368:  template<typename _Tp, typename _Alloc>
+        -: 1369:    inline bool
+        -: 1370:    operator==(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1371:    { return (__x.size() == __y.size()
+        -: 1372:	      && std::equal(__x.begin(), __x.end(), __y.begin())); }
+        -: 1373:
+        -: 1374:  /**
+        -: 1375:   *  @brief  Vector ordering relation.
+        -: 1376:   *  @param  __x  A %vector.
+        -: 1377:   *  @param  __y  A %vector of the same type as @a __x.
+        -: 1378:   *  @return  True iff @a __x is lexicographically less than @a __y.
+        -: 1379:   *
+        -: 1380:   *  This is a total ordering relation.  It is linear in the size of the
+        -: 1381:   *  vectors.  The elements must be comparable with @c <.
+        -: 1382:   *
+        -: 1383:   *  See std::lexicographical_compare() for how the determination is made.
+        -: 1384:  */
+        -: 1385:  template<typename _Tp, typename _Alloc>
+        -: 1386:    inline bool
+        -: 1387:    operator<(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1388:    { return std::lexicographical_compare(__x.begin(), __x.end(),
+        -: 1389:					  __y.begin(), __y.end()); }
+        -: 1390:
+        -: 1391:  /// Based on operator==
+        -: 1392:  template<typename _Tp, typename _Alloc>
+        -: 1393:    inline bool
+        -: 1394:    operator!=(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1395:    { return !(__x == __y); }
+        -: 1396:
+        -: 1397:  /// Based on operator<
+        -: 1398:  template<typename _Tp, typename _Alloc>
+        -: 1399:    inline bool
+        -: 1400:    operator>(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1401:    { return __y < __x; }
+        -: 1402:
+        -: 1403:  /// Based on operator<
+        -: 1404:  template<typename _Tp, typename _Alloc>
+        -: 1405:    inline bool
+        -: 1406:    operator<=(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1407:    { return !(__y < __x); }
+        -: 1408:
+        -: 1409:  /// Based on operator<
+        -: 1410:  template<typename _Tp, typename _Alloc>
+        -: 1411:    inline bool
+        -: 1412:    operator>=(const vector<_Tp, _Alloc>& __x, const vector<_Tp, _Alloc>& __y)
+        -: 1413:    { return !(__x < __y); }
+        -: 1414:
+        -: 1415:  /// See std::vector::swap().
+        -: 1416:  template<typename _Tp, typename _Alloc>
+        -: 1417:    inline void
+        -: 1418:    swap(vector<_Tp, _Alloc>& __x, vector<_Tp, _Alloc>& __y)
+        -: 1419:    { __x.swap(__y); }
+        -: 1420:
+        -: 1421:_GLIBCXX_END_NAMESPACE_CONTAINER
+        -: 1422:} // namespace std
+        -: 1423:
+        -: 1424:#endif /* _STL_VECTOR_H */

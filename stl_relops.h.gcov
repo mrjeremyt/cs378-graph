@@ -1,0 +1,147 @@
+        -:    0:Source:/usr/include/c++/4.7/bits/stl_relops.h
+        -:    0:Programs:1
+        -:    1:// std::rel_ops implementation -*- C++ -*-
+        -:    2:
+        -:    3:// Copyright (C) 2001, 2002, 2004, 2005, 2008, 2010, 2011
+        -:    4:// Free Software Foundation, Inc.
+        -:    5://
+        -:    6:// This file is part of the GNU ISO C++ Library.  This library is free
+        -:    7:// software; you can redistribute it and/or modify it under the
+        -:    8:// terms of the GNU General Public License as published by the
+        -:    9:// Free Software Foundation; either version 3, or (at your option)
+        -:   10:// any later version.
+        -:   11:
+        -:   12:// This library is distributed in the hope that it will be useful,
+        -:   13:// but WITHOUT ANY WARRANTY; without even the implied warranty of
+        -:   14:// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        -:   15:// GNU General Public License for more details.
+        -:   16:
+        -:   17:// Under Section 7 of GPL version 3, you are granted additional
+        -:   18:// permissions described in the GCC Runtime Library Exception, version
+        -:   19:// 3.1, as published by the, 2009 Free Software Foundation.
+        -:   20:
+        -:   21:// You should have received a copy of the GNU General Public License and
+        -:   22:// a copy of the GCC Runtime Library Exception along with this program;
+        -:   23:// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+        -:   24:// <http://www.gnu.org/licenses/>.
+        -:   25:
+        -:   26:/*
+        -:   27: *
+        -:   28: * Copyright (c) 1994
+        -:   29: * Hewlett-Packard Company
+        -:   30: *
+        -:   31: * Permission to use, copy, modify, distribute and sell this software
+        -:   32: * and its documentation for any purpose is hereby granted without fee,
+        -:   33: * provided that the above copyright notice appear in all copies and
+        -:   34: * that both that copyright notice and this permission notice appear
+        -:   35: * in supporting documentation.  Hewlett-Packard Company makes no
+        -:   36: * representations about the suitability of this software for any
+        -:   37: * purpose.  It is provided "as is" without express or implied warranty.
+        -:   38: *
+        -:   39: * Copyright (c) 1996,1997
+        -:   40: * Silicon Graphics
+        -:   41: *
+        -:   42: * Permission to use, copy, modify, distribute and sell this software
+        -:   43: * and its documentation for any purpose is hereby granted without fee,
+        -:   44: * provided that the above copyright notice appear in all copies and
+        -:   45: * that both that copyright notice and this permission notice appear
+        -:   46: * in supporting documentation.  Silicon Graphics makes no
+        -:   47: * representations about the suitability of this software for any
+        -:   48: * purpose.  It is provided "as is" without express or implied warranty.
+        -:   49: *
+        -:   50: */
+        -:   51:
+        -:   52:/** @file bits/stl_relops.h
+        -:   53: *  This is an internal header file, included by other library headers.
+        -:   54: *  Do not attempt to use it directly. @headername{utility}
+        -:   55: *
+        -:   56: *  Inclusion of this file has been removed from
+        -:   57: *  all of the other STL headers for safety reasons, except std_utility.h.
+        -:   58: *  For more information, see the thread of about twenty messages starting
+        -:   59: *  with http://gcc.gnu.org/ml/libstdc++/2001-01/msg00223.html, or
+        -:   60: *  http://gcc.gnu.org/onlinedocs/libstdc++/faq.html#faq.ambiguous_overloads
+        -:   61: *
+        -:   62: *  Short summary: the rel_ops operators should be avoided for the present.
+        -:   63: */
+        -:   64:
+        -:   65:#ifndef _STL_RELOPS_H
+        -:   66:#define _STL_RELOPS_H 1
+        -:   67:
+        -:   68:namespace std _GLIBCXX_VISIBILITY(default)
+        -:   69:{
+        -:   70:  namespace rel_ops
+        -:   71:  {
+        -:   72:  _GLIBCXX_BEGIN_NAMESPACE_VERSION
+        -:   73:
+        -:   74:    /** @namespace std::rel_ops
+        -:   75:     *  @brief  The generated relational operators are sequestered here.
+        -:   76:     */
+        -:   77:
+        -:   78:    /**
+        -:   79:     *  @brief Defines @c != for arbitrary types, in terms of @c ==.
+        -:   80:     *  @param  __x  A thing.
+        -:   81:     *  @param  __y  Another thing.
+        -:   82:     *  @return   __x != __y
+        -:   83:     *
+        -:   84:     *  This function uses @c == to determine its result.
+        -:   85:     */
+        -:   86:    template <class _Tp>
+        -:   87:      inline bool
+function _ZNSt7rel_opsneIN5boost18adjacency_iteratorINS1_14adjacency_listINS1_4setSENS1_4vecSENS1_9directedSENS1_11no_propertyES7_S7_NS1_5listSEEEmNS1_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINSA_4sep_ImS7_EEEmNSA_14edge_desc_implINS1_12directed_tagEmEElEElEEEEbRKT_SN_ called 32 returned 100% blocks executed 100%
+function _ZNSt7rel_opsneIN5boost12range_detail16integer_iteratorImEEEEbRKT_S7_ called 44 returned 100% blocks executed 100%
+function _ZNSt7rel_opsneIN5Graph18adjacency_iteratorEEEbRKT_S5_ called 32 returned 100% blocks executed 100%
+function _ZNSt7rel_opsneIN5Graph13edge_iteratorEEEbRKT_S5_ called 44 returned 100% blocks executed 100%
+function _ZNSt7rel_opsneIN5Graph15vertex_iteratorEEEbRKT_S5_ called 44 returned 100% blocks executed 100%
+      196:   88:      operator!=(const _Tp& __x, const _Tp& __y)
+      196:   89:      { return !(__x == __y); }
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+        -:   90:
+        -:   91:    /**
+        -:   92:     *  @brief Defines @c > for arbitrary types, in terms of @c <.
+        -:   93:     *  @param  __x  A thing.
+        -:   94:     *  @param  __y  Another thing.
+        -:   95:     *  @return   __x > __y
+        -:   96:     *
+        -:   97:     *  This function uses @c < to determine its result.
+        -:   98:     */
+        -:   99:    template <class _Tp>
+        -:  100:      inline bool
+        -:  101:      operator>(const _Tp& __x, const _Tp& __y)
+        -:  102:      { return __y < __x; }
+        -:  103:
+        -:  104:    /**
+        -:  105:     *  @brief Defines @c <= for arbitrary types, in terms of @c <.
+        -:  106:     *  @param  __x  A thing.
+        -:  107:     *  @param  __y  Another thing.
+        -:  108:     *  @return   __x <= __y
+        -:  109:     *
+        -:  110:     *  This function uses @c < to determine its result.
+        -:  111:     */
+        -:  112:    template <class _Tp>
+        -:  113:      inline bool
+        -:  114:      operator<=(const _Tp& __x, const _Tp& __y)
+        -:  115:      { return !(__y < __x); }
+        -:  116:
+        -:  117:    /**
+        -:  118:     *  @brief Defines @c >= for arbitrary types, in terms of @c <.
+        -:  119:     *  @param  __x  A thing.
+        -:  120:     *  @param  __y  Another thing.
+        -:  121:     *  @return   __x >= __y
+        -:  122:     *
+        -:  123:     *  This function uses @c < to determine its result.
+        -:  124:     */
+        -:  125:    template <class _Tp>
+        -:  126:      inline bool
+        -:  127:      operator>=(const _Tp& __x, const _Tp& __y)
+        -:  128:      { return !(__x < __y); }
+        -:  129:
+        -:  130:  _GLIBCXX_END_NAMESPACE_VERSION
+        -:  131:  } // namespace rel_ops
+        -:  132:
+        -:  133:} // namespace std
+        -:  134:
+        -:  135:#endif /* _STL_RELOPS_H */

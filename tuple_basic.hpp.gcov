@@ -1,0 +1,1043 @@
+        -:    0:Source:/usr/include/boost/tuple/detail/tuple_basic.hpp
+        -:    0:Programs:1
+        -:    1://  tuple_basic.hpp -----------------------------------------------------
+        -:    2:
+        -:    3:// Copyright (C) 1999, 2000 Jaakko Jarvi (jaakko.jarvi@cs.utu.fi)
+        -:    4://
+        -:    5:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    6:// accompanying file LICENSE_1_0.txt or copy at
+        -:    7:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    8:
+        -:    9:// For more information, see http://www.boost.org
+        -:   10:
+        -:   11:// Outside help:
+        -:   12:// This and that, Gary Powell.
+        -:   13:// Fixed return types for get_head/get_tail
+        -:   14:// ( and other bugs ) per suggestion of Jens Maurer
+        -:   15:// simplified element type accessors + bug fix  (Jeremy Siek)
+        -:   16:// Several changes/additions according to suggestions by Douglas Gregor,
+        -:   17:// William Kempf, Vesa Karvonen, John Max Skaller, Ed Brey, Beman Dawes,
+        -:   18:// David Abrahams.
+        -:   19:
+        -:   20:// Revision history:
+        -:   21:// 2002 05 01 Hugo Duncan: Fix for Borland after Jaakko's previous changes
+        -:   22:// 2002 04 18 Jaakko: tuple element types can be void or plain function
+        -:   23://                    types, as long as no object is created.
+        -:   24://                    Tuple objects can no hold even noncopyable types
+        -:   25://                    such as arrays.
+        -:   26:// 2001 10 22 John Maddock
+        -:   27://      Fixes for Borland C++
+        -:   28:// 2001 08 30 David Abrahams
+        -:   29://      Added default constructor for cons<>.
+        -:   30:// -----------------------------------------------------------------
+        -:   31:
+        -:   32:#ifndef BOOST_TUPLE_BASIC_HPP
+        -:   33:#define BOOST_TUPLE_BASIC_HPP
+        -:   34:
+        -:   35:
+        -:   36:#include <utility> // needed for the assignment from pair to tuple
+        -:   37:
+        -:   38:#include "boost/type_traits/cv_traits.hpp"
+        -:   39:#include "boost/type_traits/function_traits.hpp"
+        -:   40:#include "boost/utility/swap.hpp"
+        -:   41:
+        -:   42:#include "boost/detail/workaround.hpp" // needed for BOOST_WORKAROUND
+        -:   43:
+        -:   44:namespace boost {
+        -:   45:namespace tuples {
+        -:   46:
+        -:   47:// -- null_type --------------------------------------------------------
+        -:   48:struct null_type {};
+        -:   49:
+        -:   50:// a helper function to provide a const null_type type temporary
+        -:   51:namespace detail {
+function _ZN5boost6tuples6detail5cnullEv called 542340 returned 100% blocks executed 100%
+   542340:   52:  inline const null_type cnull() { return null_type(); }
+        -:   53:
+        -:   54:
+        -:   55:// -- if construct ------------------------------------------------
+        -:   56:// Proposed by Krzysztof Czarnecki and Ulrich Eisenecker
+        -:   57:
+        -:   58:template <bool If, class Then, class Else> struct IF { typedef Then RET; };
+        -:   59:
+        -:   60:template <class Then, class Else> struct IF<false, Then, Else> {
+        -:   61:  typedef Else RET;
+        -:   62:};
+        -:   63:
+        -:   64:} // end detail
+        -:   65:
+        -:   66:// - cons forward declaration -----------------------------------------------
+        -:   67:template <class HT, class TT> struct cons;
+        -:   68:
+        -:   69:
+        -:   70:// - tuple forward declaration -----------------------------------------------
+        -:   71:template <
+        -:   72:  class T0 = null_type, class T1 = null_type, class T2 = null_type,
+        -:   73:  class T3 = null_type, class T4 = null_type, class T5 = null_type,
+        -:   74:  class T6 = null_type, class T7 = null_type, class T8 = null_type,
+        -:   75:  class T9 = null_type>
+        -:   76:class tuple;
+        -:   77:
+        -:   78:// tuple_length forward declaration
+        -:   79:template<class T> struct length;
+        -:   80:
+        -:   81:
+        -:   82:
+        -:   83:namespace detail {
+        -:   84:
+        -:   85:// -- generate error template, referencing to non-existing members of this
+        -:   86:// template is used to produce compilation errors intentionally
+        -:   87:template<class T>
+        -:   88:class generate_error;
+        -:   89:
+        -:   90:template<int N>
+        -:   91:struct drop_front {
+        -:   92:    template<class Tuple>
+        -:   93:    struct apply {
+        -:   94:        typedef BOOST_DEDUCED_TYPENAME drop_front<N-1>::BOOST_NESTED_TEMPLATE
+        -:   95:            apply<Tuple> next;
+        -:   96:        typedef BOOST_DEDUCED_TYPENAME next::type::tail_type type;
+        -:   97:        static const type& call(const Tuple& tup) {
+        -:   98:            return next::call(tup).tail;
+        -:   99:        }
+        -:  100:    };
+        -:  101:};
+        -:  102:
+        -:  103:template<>
+        -:  104:struct drop_front<0> {
+        -:  105:    template<class Tuple>
+        -:  106:    struct apply {
+        -:  107:        typedef Tuple type;
+        -:  108:        static const type& call(const Tuple& tup) {
+        -:  109:            return tup;
+        -:  110:        }
+        -:  111:    };
+        -:  112:};
+        -:  113:
+        -:  114:} // end of namespace detail
+        -:  115:
+        -:  116:
+        -:  117:// -cons type accessors ----------------------------------------
+        -:  118:// typename tuples::element<N,T>::type gets the type of the
+        -:  119:// Nth element ot T, first element is at index 0
+        -:  120:// -------------------------------------------------------
+        -:  121:
+        -:  122:#ifndef BOOST_NO_CV_SPECIALIZATIONS
+        -:  123:
+        -:  124:template<int N, class T>
+        -:  125:struct element
+        -:  126:{
+        -:  127:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  128:      apply<T>::type::head_type type;
+        -:  129:};
+        -:  130:
+        -:  131:template<int N, class T>
+        -:  132:struct element<N, const T>
+        -:  133:{
+        -:  134:private:
+        -:  135:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  136:      apply<T>::type::head_type unqualified_type;
+        -:  137:public:
+        -:  138:#if BOOST_WORKAROUND(__BORLANDC__,<0x600)
+        -:  139:  typedef const unqualified_type type;
+        -:  140:#else
+        -:  141:  typedef BOOST_DEDUCED_TYPENAME boost::add_const<unqualified_type>::type type;
+        -:  142:#endif
+        -:  143:};
+        -:  144:#else // def BOOST_NO_CV_SPECIALIZATIONS
+        -:  145:
+        -:  146:namespace detail {
+        -:  147:
+        -:  148:template<int N, class T, bool IsConst>
+        -:  149:struct element_impl
+        -:  150:{
+        -:  151:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  152:      apply<T>::type::head_type type;
+        -:  153:};
+        -:  154:
+        -:  155:template<int N, class T>
+        -:  156:struct element_impl<N, T, true /* IsConst */>
+        -:  157:{
+        -:  158:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  159:      apply<T>::type::head_type unqualified_type;
+        -:  160:  typedef const unqualified_type type;
+        -:  161:};
+        -:  162:
+        -:  163:} // end of namespace detail
+        -:  164:
+        -:  165:
+        -:  166:template<int N, class T>
+        -:  167:struct element:
+        -:  168:  public detail::element_impl<N, T, ::boost::is_const<T>::value>
+        -:  169:{
+        -:  170:};
+        -:  171:
+        -:  172:#endif
+        -:  173:
+        -:  174:
+        -:  175:// -get function templates -----------------------------------------------
+        -:  176:// Usage: get<N>(aTuple)
+        -:  177:
+        -:  178:// -- some traits classes for get functions
+        -:  179:
+        -:  180:// access traits lifted from detail namespace to be part of the interface,
+        -:  181:// (Joel de Guzman's suggestion). Rationale: get functions are part of the
+        -:  182:// interface, so should the way to express their return types be.
+        -:  183:
+        -:  184:template <class T> struct access_traits {
+        -:  185:  typedef const T& const_type;
+        -:  186:  typedef T& non_const_type;
+        -:  187:
+        -:  188:  typedef const typename boost::remove_cv<T>::type& parameter_type;
+        -:  189:
+        -:  190:// used as the tuple constructors parameter types
+        -:  191:// Rationale: non-reference tuple element types can be cv-qualified.
+        -:  192:// It should be possible to initialize such types with temporaries,
+        -:  193:// and when binding temporaries to references, the reference must
+        -:  194:// be non-volatile and const. 8.5.3. (5)
+        -:  195:};
+        -:  196:
+        -:  197:template <class T> struct access_traits<T&> {
+        -:  198:
+        -:  199:  typedef T& const_type;
+        -:  200:  typedef T& non_const_type;
+        -:  201:
+        -:  202:  typedef T& parameter_type;
+        -:  203:};
+        -:  204:
+        -:  205:// get function for non-const cons-lists, returns a reference to the element
+        -:  206:
+        -:  207:template<int N, class HT, class TT>
+        -:  208:inline typename access_traits<
+        -:  209:                  typename element<N, cons<HT, TT> >::type
+        -:  210:                >::non_const_type
+        -:  211:get(cons<HT, TT>& c BOOST_APPEND_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
+        -:  212:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  213:      apply<cons<HT, TT> > impl;
+        -:  214:  typedef BOOST_DEDUCED_TYPENAME impl::type cons_element;
+        -:  215:  return const_cast<cons_element&>(impl::call(c)).head;
+        -:  216:}
+        -:  217:
+        -:  218:// get function for const cons-lists, returns a const reference to
+        -:  219:// the element. If the element is a reference, returns the reference
+        -:  220:// as such (that is, can return a non-const reference)
+        -:  221:template<int N, class HT, class TT>
+        -:  222:inline typename access_traits<
+        -:  223:                  typename element<N, cons<HT, TT> >::type
+        -:  224:                >::const_type
+        -:  225:get(const cons<HT, TT>& c BOOST_APPEND_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
+        -:  226:  typedef BOOST_DEDUCED_TYPENAME detail::drop_front<N>::BOOST_NESTED_TEMPLATE
+        -:  227:      apply<cons<HT, TT> > impl;
+        -:  228:  typedef BOOST_DEDUCED_TYPENAME impl::type cons_element;
+        -:  229:  return impl::call(c).head;
+        -:  230:}
+        -:  231:
+        -:  232:// -- the cons template  --------------------------------------------------
+        -:  233:namespace detail {
+        -:  234:
+        -:  235://  These helper templates wrap void types and plain function types.
+        -:  236://  The reationale is to allow one to write tuple types with those types
+        -:  237://  as elements, even though it is not possible to instantiate such object.
+        -:  238://  E.g: typedef tuple<void> some_type; // ok
+        -:  239://  but: some_type x; // fails
+        -:  240:
+        -:  241:template <class T> class non_storeable_type {
+        -:  242:  non_storeable_type();
+        -:  243:};
+        -:  244:
+        -:  245:template <class T> struct wrap_non_storeable_type {
+        -:  246:  typedef typename IF<
+        -:  247:    ::boost::is_function<T>::value, non_storeable_type<T>, T
+        -:  248:  >::RET type;
+        -:  249:};
+        -:  250:template <> struct wrap_non_storeable_type<void> {
+        -:  251:  typedef non_storeable_type<void> type;
+        -:  252:};
+        -:  253:
+        -:  254:} // detail
+        -:  255:
+        -:  256:template <class HT, class TT>
+        -:  257:struct cons {
+        -:  258:
+        -:  259:  typedef HT head_type;
+        -:  260:  typedef TT tail_type;
+        -:  261:
+        -:  262:  typedef typename
+        -:  263:    detail::wrap_non_storeable_type<head_type>::type stored_head_type;
+        -:  264:
+        -:  265:  stored_head_type head;
+        -:  266:  tail_type tail;
+        -:  267:
+        -:  268:  typename access_traits<stored_head_type>::non_const_type
+        -:  269:  get_head() { return head; }
+        -:  270:
+        -:  271:  typename access_traits<tail_type>::non_const_type
+        -:  272:  get_tail() { return tail; }
+        -:  273:
+        -:  274:  typename access_traits<stored_head_type>::const_type
+        -:  275:  get_head() const { return head; }
+        -:  276:
+        -:  277:  typename access_traits<tail_type>::const_type
+        -:  278:  get_tail() const { return tail; }
+        -:  279:
+        -:  280:  cons() : head(), tail() {}
+        -:  281:  //  cons() : head(detail::default_arg<HT>::f()), tail() {}
+        -:  282:
+        -:  283:  // the argument for head is not strictly needed, but it prevents
+        -:  284:  // array type elements. This is good, since array type elements
+        -:  285:  // cannot be supported properly in any case (no assignment,
+        -:  286:  // copy works only if the tails are exactly the same type, ...)
+        -:  287:
+        -:  288:  cons(typename access_traits<stored_head_type>::parameter_type h,
+        -:  289:       const tail_type& t)
+        -:  290:    : head (h), tail(t) {}
+        -:  291:
+        -:  292:  template <class T1, class T2, class T3, class T4, class T5,
+        -:  293:            class T6, class T7, class T8, class T9, class T10>
+function _ZN5boost6tuples4consIRSt23_Rb_tree_const_iteratorINS_6detail4sep_ImNS_11no_propertyEEEENS1_IRbNS0_9null_typeEEEEC2IS7_bKSA_SE_SE_SE_SE_SE_SE_SE_EERT_RT0_RT1_RT2_RT3_RT4_RT5_RT6_RT7_RT8_ called 60224 returned 100% blocks executed 100%
+function _ZN5boost6tuples4consIRNS_12range_detail16integer_iteratorImEENS1_IS5_NS0_9null_typeEEEEC2IS4_S4_KS6_SA_SA_SA_SA_SA_SA_SA_EERT_RT0_RT1_RT2_RT3_RT4_RT5_RT6_RT7_RT8_ called 24 returned 100% blocks executed 100%
+function _ZN5boost6tuples4consIRNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEENS1_ISD_NS0_9null_typeEEEEC2ISC_SC_KSE_SI_SI_SI_SI_SI_SI_SI_EERT_RT0_RT1_RT2_RT3_RT4_RT5_RT6_RT7_RT8_ called 12 returned 100% blocks executed 100%
+    60260:  294:  cons( T1& t1, T2& t2, T3& t3, T4& t4, T5& t5,
+        -:  295:        T6& t6, T7& t7, T8& t8, T9& t9, T10& t10 )
+        -:  296:    : head (t1),
+    60260:  297:      tail (t2, t3, t4, t5, t6, t7, t8, t9, t10, detail::cnull())
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+    60260:  298:      {}
+        -:  299:
+        -:  300:  template <class T2, class T3, class T4, class T5,
+        -:  301:            class T6, class T7, class T8, class T9, class T10>
+        -:  302:  cons( const null_type& /*t1*/, T2& t2, T3& t3, T4& t4, T5& t5,
+        -:  303:        T6& t6, T7& t7, T8& t8, T9& t9, T10& t10 )
+        -:  304:    : head (),
+        -:  305:      tail (t2, t3, t4, t5, t6, t7, t8, t9, t10, detail::cnull())
+        -:  306:      {}
+        -:  307:
+        -:  308:
+        -:  309:  template <class HT2, class TT2>
+        -:  310:  cons( const cons<HT2, TT2>& u ) : head(u.head), tail(u.tail) {}
+        -:  311:
+        -:  312:  template <class HT2, class TT2>
+        -:  313:  cons& operator=( const cons<HT2, TT2>& u ) {
+        -:  314:    head=u.head; tail=u.tail; return *this;
+        -:  315:  }
+        -:  316:
+        -:  317:  // must define assignment operator explicitly, implicit version is
+        -:  318:  // illformed if HT is a reference (12.8. (12))
+        -:  319:  cons& operator=(const cons& u) {
+        -:  320:    head = u.head; tail = u.tail;  return *this;
+        -:  321:  }
+        -:  322:
+        -:  323:  template <class T1, class T2>
+        -:  324:  cons& operator=( const std::pair<T1, T2>& u ) {
+        -:  325:    BOOST_STATIC_ASSERT(length<cons>::value == 2); // check length = 2
+        -:  326:    head = u.first; tail.head = u.second; return *this;
+        -:  327:  }
+        -:  328:
+        -:  329:  // get member functions (non-const and const)
+        -:  330:  template <int N>
+        -:  331:  typename access_traits<
+        -:  332:             typename element<N, cons<HT, TT> >::type
+        -:  333:           >::non_const_type
+        -:  334:  get() {
+        -:  335:    return boost::tuples::get<N>(*this); // delegate to non-member get
+        -:  336:  }
+        -:  337:
+        -:  338:  template <int N>
+        -:  339:  typename access_traits<
+        -:  340:             typename element<N, cons<HT, TT> >::type
+        -:  341:           >::const_type
+        -:  342:  get() const {
+        -:  343:    return boost::tuples::get<N>(*this); // delegate to non-member get
+        -:  344:  }
+        -:  345:};
+        -:  346:
+        -:  347:template <class HT>
+        -:  348:struct cons<HT, null_type> {
+        -:  349:
+        -:  350:  typedef HT head_type;
+        -:  351:  typedef null_type tail_type;
+        -:  352:  typedef cons<HT, null_type> self_type;
+        -:  353:
+        -:  354:  typedef typename
+        -:  355:    detail::wrap_non_storeable_type<head_type>::type stored_head_type;
+        -:  356:  stored_head_type head;
+        -:  357:
+        -:  358:  typename access_traits<stored_head_type>::non_const_type
+        -:  359:  get_head() { return head; }
+        -:  360:
+        -:  361:  null_type get_tail() { return null_type(); }
+        -:  362:
+        -:  363:  typename access_traits<stored_head_type>::const_type
+        -:  364:  get_head() const { return head; }
+        -:  365:
+        -:  366:  const null_type get_tail() const { return null_type(); }
+        -:  367:
+        -:  368:  //  cons() : head(detail::default_arg<HT>::f()) {}
+        -:  369:  cons() : head() {}
+        -:  370:
+        -:  371:  cons(typename access_traits<stored_head_type>::parameter_type h,
+        -:  372:       const null_type& = null_type())
+        -:  373:    : head (h) {}
+        -:  374:
+        -:  375:  template<class T1>
+function _ZN5boost6tuples4consIRbNS0_9null_typeEEC2IbEERT_RKS3_S9_S9_S9_S9_S9_S9_S9_S9_ called 60224 returned 100% blocks executed 100%
+function _ZN5boost6tuples4consIRNS_12range_detail16integer_iteratorImEENS0_9null_typeEEC2IS4_EERT_RKS6_SC_SC_SC_SC_SC_SC_SC_SC_ called 24 returned 100% blocks executed 100%
+function _ZN5boost6tuples4consIRNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEENS0_9null_typeEEC2ISC_EERT_RKSE_SK_SK_SK_SK_SK_SK_SK_SK_ called 12 returned 100% blocks executed 100%
+    60260:  376:  cons(T1& t1, const null_type&, const null_type&, const null_type&,
+        -:  377:       const null_type&, const null_type&, const null_type&,
+        -:  378:       const null_type&, const null_type&, const null_type&)
+    60260:  379:  : head (t1) {}
+        -:  380:
+        -:  381:  cons(const null_type&,
+        -:  382:       const null_type&, const null_type&, const null_type&,
+        -:  383:       const null_type&, const null_type&, const null_type&,
+        -:  384:       const null_type&, const null_type&, const null_type&)
+        -:  385:  : head () {}
+        -:  386:
+        -:  387:  template <class HT2>
+        -:  388:  cons( const cons<HT2, null_type>& u ) : head(u.head) {}
+        -:  389:
+        -:  390:  template <class HT2>
+        -:  391:  cons& operator=(const cons<HT2, null_type>& u )
+        -:  392:  { head = u.head; return *this; }
+        -:  393:
+        -:  394:  // must define assignment operator explicitely, implicit version
+        -:  395:  // is illformed if HT is a reference
+        -:  396:  cons& operator=(const cons& u) { head = u.head; return *this; }
+        -:  397:
+        -:  398:  template <int N>
+        -:  399:  typename access_traits<
+        -:  400:             typename element<N, self_type>::type
+        -:  401:            >::non_const_type
+        -:  402:  get(BOOST_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) {
+        -:  403:    return boost::tuples::get<N>(*this);
+        -:  404:  }
+        -:  405:
+        -:  406:  template <int N>
+        -:  407:  typename access_traits<
+        -:  408:             typename element<N, self_type>::type
+        -:  409:           >::const_type
+        -:  410:  get(BOOST_EXPLICIT_TEMPLATE_NON_TYPE(int, N)) const {
+        -:  411:    return boost::tuples::get<N>(*this);
+        -:  412:  }
+        -:  413:
+        -:  414:};
+        -:  415:
+        -:  416:// templates for finding out the length of the tuple -------------------
+        -:  417:
+        -:  418:template<class T>
+        -:  419:struct length  {
+        -:  420:  BOOST_STATIC_CONSTANT(int, value = 1 + length<typename T::tail_type>::value);
+        -:  421:};
+        -:  422:
+        -:  423:template<>
+        -:  424:struct length<tuple<> > {
+        -:  425:  BOOST_STATIC_CONSTANT(int, value = 0);
+        -:  426:};
+        -:  427:
+        -:  428:template<>
+        -:  429:struct length<tuple<> const> {
+        -:  430:  BOOST_STATIC_CONSTANT(int, value = 0);
+        -:  431:};
+        -:  432:
+        -:  433:template<>
+        -:  434:struct length<null_type> {
+        -:  435:  BOOST_STATIC_CONSTANT(int, value = 0);
+        -:  436:};
+        -:  437:
+        -:  438:template<>
+        -:  439:struct length<null_type const> {
+        -:  440:  BOOST_STATIC_CONSTANT(int, value = 0);
+        -:  441:};
+        -:  442:
+        -:  443:namespace detail {
+        -:  444:
+        -:  445:// Tuple to cons mapper --------------------------------------------------
+        -:  446:template <class T0, class T1, class T2, class T3, class T4,
+        -:  447:          class T5, class T6, class T7, class T8, class T9>
+        -:  448:struct map_tuple_to_cons
+        -:  449:{
+        -:  450:  typedef cons<T0,
+        -:  451:               typename map_tuple_to_cons<T1, T2, T3, T4, T5,
+        -:  452:                                          T6, T7, T8, T9, null_type>::type
+        -:  453:              > type;
+        -:  454:};
+        -:  455:
+        -:  456:// The empty tuple is a null_type
+        -:  457:template <>
+        -:  458:struct map_tuple_to_cons<null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type>
+        -:  459:{
+        -:  460:  typedef null_type type;
+        -:  461:};
+        -:  462:
+        -:  463:} // end detail
+        -:  464:
+        -:  465:// -------------------------------------------------------------------
+        -:  466:// -- tuple ------------------------------------------------------
+        -:  467:template <class T0, class T1, class T2, class T3, class T4,
+        -:  468:          class T5, class T6, class T7, class T8, class T9>
+        -:  469:
+        -:  470:class tuple :
+        -:  471:  public detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+        -:  472:{
+        -:  473:public:
+        -:  474:  typedef typename
+        -:  475:    detail::map_tuple_to_cons<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type inherited;
+        -:  476:  typedef typename inherited::head_type head_type;
+        -:  477:  typedef typename inherited::tail_type tail_type;
+        -:  478:
+        -:  479:
+        -:  480:// access_traits<T>::parameter_type takes non-reference types as const T&
+        -:  481:  tuple() {}
+        -:  482:
+        -:  483:  tuple(typename access_traits<T0>::parameter_type t0)
+        -:  484:    : inherited(t0, detail::cnull(), detail::cnull(), detail::cnull(),
+        -:  485:                detail::cnull(), detail::cnull(), detail::cnull(),
+        -:  486:                detail::cnull(), detail::cnull(), detail::cnull()) {}
+        -:  487:
+function _ZN5boost6tuples5tupleIRSt23_Rb_tree_const_iteratorINS_6detail4sep_ImNS_11no_propertyEEEERbNS0_9null_typeESA_SA_SA_SA_SA_SA_SA_EC2ES8_S9_ called 60224 returned 100% blocks executed 56%
+function _ZN5boost6tuples5tupleIRNS_12range_detail16integer_iteratorImEES5_NS0_9null_typeES6_S6_S6_S6_S6_S6_S6_EC2ES5_S5_ called 24 returned 100% blocks executed 56%
+function _ZN5boost6tuples5tupleIRNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESD_NS0_9null_typeESE_SE_SE_SE_SE_SE_SE_EC2ESD_SD_ called 12 returned 100% blocks executed 56%
+    60260:  488:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  489:        typename access_traits<T1>::parameter_type t1)
+        -:  490:    : inherited(t0, t1, detail::cnull(), detail::cnull(),
+        -:  491:                detail::cnull(), detail::cnull(), detail::cnull(),
+    60260:  492:                detail::cnull(), detail::cnull(), detail::cnull()) {}
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+call    6 returned 100%
+call    7 returned 100%
+branch  8 taken 100% (fallthrough)
+branch  9 taken 0% (throw)
+call   10 returned 100%
+call   11 never executed
+call   12 returned 100%
+call   13 returned 100%
+call   14 returned 100%
+call   15 returned 100%
+call   16 returned 100%
+call   17 returned 100%
+call   18 returned 100%
+call   19 returned 100%
+branch 20 taken 100% (fallthrough)
+branch 21 taken 0% (throw)
+call   22 returned 100%
+call   23 never executed
+call   24 returned 100%
+call   25 returned 100%
+call   26 returned 100%
+call   27 returned 100%
+call   28 returned 100%
+call   29 returned 100%
+call   30 returned 100%
+call   31 returned 100%
+branch 32 taken 100% (fallthrough)
+branch 33 taken 0% (throw)
+call   34 returned 100%
+call   35 never executed
+        -:  493:
+        -:  494:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  495:        typename access_traits<T1>::parameter_type t1,
+        -:  496:        typename access_traits<T2>::parameter_type t2)
+        -:  497:    : inherited(t0, t1, t2, detail::cnull(), detail::cnull(),
+        -:  498:                detail::cnull(), detail::cnull(), detail::cnull(),
+        -:  499:                detail::cnull(), detail::cnull()) {}
+        -:  500:
+        -:  501:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  502:        typename access_traits<T1>::parameter_type t1,
+        -:  503:        typename access_traits<T2>::parameter_type t2,
+        -:  504:        typename access_traits<T3>::parameter_type t3)
+        -:  505:    : inherited(t0, t1, t2, t3, detail::cnull(), detail::cnull(),
+        -:  506:                detail::cnull(), detail::cnull(), detail::cnull(),
+        -:  507:                detail::cnull()) {}
+        -:  508:
+        -:  509:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  510:        typename access_traits<T1>::parameter_type t1,
+        -:  511:        typename access_traits<T2>::parameter_type t2,
+        -:  512:        typename access_traits<T3>::parameter_type t3,
+        -:  513:        typename access_traits<T4>::parameter_type t4)
+        -:  514:    : inherited(t0, t1, t2, t3, t4, detail::cnull(), detail::cnull(),
+        -:  515:                detail::cnull(), detail::cnull(), detail::cnull()) {}
+        -:  516:
+        -:  517:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  518:        typename access_traits<T1>::parameter_type t1,
+        -:  519:        typename access_traits<T2>::parameter_type t2,
+        -:  520:        typename access_traits<T3>::parameter_type t3,
+        -:  521:        typename access_traits<T4>::parameter_type t4,
+        -:  522:        typename access_traits<T5>::parameter_type t5)
+        -:  523:    : inherited(t0, t1, t2, t3, t4, t5, detail::cnull(), detail::cnull(),
+        -:  524:                detail::cnull(), detail::cnull()) {}
+        -:  525:
+        -:  526:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  527:        typename access_traits<T1>::parameter_type t1,
+        -:  528:        typename access_traits<T2>::parameter_type t2,
+        -:  529:        typename access_traits<T3>::parameter_type t3,
+        -:  530:        typename access_traits<T4>::parameter_type t4,
+        -:  531:        typename access_traits<T5>::parameter_type t5,
+        -:  532:        typename access_traits<T6>::parameter_type t6)
+        -:  533:    : inherited(t0, t1, t2, t3, t4, t5, t6, detail::cnull(),
+        -:  534:                detail::cnull(), detail::cnull()) {}
+        -:  535:
+        -:  536:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  537:        typename access_traits<T1>::parameter_type t1,
+        -:  538:        typename access_traits<T2>::parameter_type t2,
+        -:  539:        typename access_traits<T3>::parameter_type t3,
+        -:  540:        typename access_traits<T4>::parameter_type t4,
+        -:  541:        typename access_traits<T5>::parameter_type t5,
+        -:  542:        typename access_traits<T6>::parameter_type t6,
+        -:  543:        typename access_traits<T7>::parameter_type t7)
+        -:  544:    : inherited(t0, t1, t2, t3, t4, t5, t6, t7, detail::cnull(),
+        -:  545:                detail::cnull()) {}
+        -:  546:
+        -:  547:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  548:        typename access_traits<T1>::parameter_type t1,
+        -:  549:        typename access_traits<T2>::parameter_type t2,
+        -:  550:        typename access_traits<T3>::parameter_type t3,
+        -:  551:        typename access_traits<T4>::parameter_type t4,
+        -:  552:        typename access_traits<T5>::parameter_type t5,
+        -:  553:        typename access_traits<T6>::parameter_type t6,
+        -:  554:        typename access_traits<T7>::parameter_type t7,
+        -:  555:        typename access_traits<T8>::parameter_type t8)
+        -:  556:    : inherited(t0, t1, t2, t3, t4, t5, t6, t7, t8, detail::cnull()) {}
+        -:  557:
+        -:  558:  tuple(typename access_traits<T0>::parameter_type t0,
+        -:  559:        typename access_traits<T1>::parameter_type t1,
+        -:  560:        typename access_traits<T2>::parameter_type t2,
+        -:  561:        typename access_traits<T3>::parameter_type t3,
+        -:  562:        typename access_traits<T4>::parameter_type t4,
+        -:  563:        typename access_traits<T5>::parameter_type t5,
+        -:  564:        typename access_traits<T6>::parameter_type t6,
+        -:  565:        typename access_traits<T7>::parameter_type t7,
+        -:  566:        typename access_traits<T8>::parameter_type t8,
+        -:  567:        typename access_traits<T9>::parameter_type t9)
+        -:  568:    : inherited(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9) {}
+        -:  569:
+        -:  570:
+        -:  571:  template<class U1, class U2>
+        -:  572:  tuple(const cons<U1, U2>& p) : inherited(p) {}
+        -:  573:
+        -:  574:  template <class U1, class U2>
+        -:  575:  tuple& operator=(const cons<U1, U2>& k) {
+        -:  576:    inherited::operator=(k);
+        -:  577:    return *this;
+        -:  578:  }
+        -:  579:
+        -:  580:  template <class U1, class U2>
+function _ZN5boost6tuples5tupleIRSt23_Rb_tree_const_iteratorINS_6detail4sep_ImNS_11no_propertyEEEERbNS0_9null_typeESA_SA_SA_SA_SA_SA_SA_EaSIS7_bEERSB_RKSt4pairIT_T0_E called 60224 returned 100% blocks executed 100%
+function _ZN5boost6tuples5tupleIRNS_12range_detail16integer_iteratorImEES5_NS0_9null_typeES6_S6_S6_S6_S6_S6_S6_EaSIS4_S4_EERS7_RKSt4pairIT_T0_E called 24 returned 100% blocks executed 100%
+function _ZN5boost6tuples5tupleIRNS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESD_NS0_9null_typeESE_SE_SE_SE_SE_SE_SE_EaSISC_SC_EERSF_RKSt4pairIT_T0_E called 12 returned 100% blocks executed 100%
+    60260:  581:  tuple& operator=(const std::pair<U1, U2>& k) {
+        -:  582:    BOOST_STATIC_ASSERT(length<tuple>::value == 2);// check_length = 2
+    60260:  583:    this->head = k.first;
+    60260:  584:    this->tail.head = k.second;
+    60260:  585:    return *this;
+        -:  586:  }
+        -:  587:
+        -:  588:};
+        -:  589:
+        -:  590:// The empty tuple
+        -:  591:template <>
+        -:  592:class tuple<null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type, null_type>  :
+        -:  593:  public null_type
+        -:  594:{
+        -:  595:public:
+        -:  596:  typedef null_type inherited;
+        -:  597:};
+        -:  598:
+        -:  599:
+        -:  600:// Swallows any assignment   (by Doug Gregor)
+        -:  601:namespace detail {
+        -:  602:
+        -:  603:struct swallow_assign;
+        -:  604:typedef void (detail::swallow_assign::*ignore_t)();
+        -:  605:struct swallow_assign {
+        -:  606:  swallow_assign(ignore_t(*)(ignore_t)) {}
+        -:  607:  template<typename T>
+        -:  608:  swallow_assign const& operator=(const T&) const {
+        -:  609:    return *this;
+        -:  610:  }
+        -:  611:};
+        -:  612:
+        -:  613:
+        -:  614:} // namespace detail
+        -:  615:
+        -:  616:// "ignore" allows tuple positions to be ignored when using "tie".
+        -:  617:inline detail::ignore_t ignore(detail::ignore_t) { return 0; }
+        -:  618:
+        -:  619:// ---------------------------------------------------------------------------
+        -:  620:// The call_traits for make_tuple
+        -:  621:// Honours the reference_wrapper class.
+        -:  622:
+        -:  623:// Must be instantiated with plain or const plain types (not with references)
+        -:  624:
+        -:  625:// from template<class T> foo(const T& t) : make_tuple_traits<const T>::type
+        -:  626:// from template<class T> foo(T& t) : make_tuple_traits<T>::type
+        -:  627:
+        -:  628:// Conversions:
+        -:  629:// T -> T,
+        -:  630:// references -> compile_time_error
+        -:  631:// reference_wrapper<T> -> T&
+        -:  632:// const reference_wrapper<T> -> T&
+        -:  633:// array -> const ref array
+        -:  634:
+        -:  635:
+        -:  636:template<class T>
+        -:  637:struct make_tuple_traits {
+        -:  638:  typedef T type;
+        -:  639:
+        -:  640:  // commented away, see below  (JJ)
+        -:  641:  //  typedef typename IF<
+        -:  642:  //  boost::is_function<T>::value,
+        -:  643:  //  T&,
+        -:  644:  //  T>::RET type;
+        -:  645:
+        -:  646:};
+        -:  647:
+        -:  648:// The is_function test was there originally for plain function types,
+        -:  649:// which can't be stored as such (we must either store them as references or
+        -:  650:// pointers). Such a type could be formed if make_tuple was called with a
+        -:  651:// reference to a function.
+        -:  652:// But this would mean that a const qualified function type was formed in
+        -:  653:// the make_tuple function and hence make_tuple can't take a function
+        -:  654:// reference as a parameter, and thus T can't be a function type.
+        -:  655:// So is_function test was removed.
+        -:  656:// (14.8.3. says that type deduction fails if a cv-qualified function type
+        -:  657:// is created. (It only applies for the case of explicitly specifying template
+        -:  658:// args, though?)) (JJ)
+        -:  659:
+        -:  660:template<class T>
+        -:  661:struct make_tuple_traits<T&> {
+        -:  662:  typedef typename
+        -:  663:     detail::generate_error<T&>::
+        -:  664:       do_not_use_with_reference_type error;
+        -:  665:};
+        -:  666:
+        -:  667:// Arrays can't be stored as plain types; convert them to references.
+        -:  668:// All arrays are converted to const. This is because make_tuple takes its
+        -:  669:// parameters as const T& and thus the knowledge of the potential
+        -:  670:// non-constness of actual argument is lost.
+        -:  671:template<class T, int n>  struct make_tuple_traits <T[n]> {
+        -:  672:  typedef const T (&type)[n];
+        -:  673:};
+        -:  674:
+        -:  675:template<class T, int n>
+        -:  676:struct make_tuple_traits<const T[n]> {
+        -:  677:  typedef const T (&type)[n];
+        -:  678:};
+        -:  679:
+        -:  680:template<class T, int n>  struct make_tuple_traits<volatile T[n]> {
+        -:  681:  typedef const volatile T (&type)[n];
+        -:  682:};
+        -:  683:
+        -:  684:template<class T, int n>
+        -:  685:struct make_tuple_traits<const volatile T[n]> {
+        -:  686:  typedef const volatile T (&type)[n];
+        -:  687:};
+        -:  688:
+        -:  689:template<class T>
+        -:  690:struct make_tuple_traits<reference_wrapper<T> >{
+        -:  691:  typedef T& type;
+        -:  692:};
+        -:  693:
+        -:  694:template<class T>
+        -:  695:struct make_tuple_traits<const reference_wrapper<T> >{
+        -:  696:  typedef T& type;
+        -:  697:};
+        -:  698:
+        -:  699:template<>
+        -:  700:struct make_tuple_traits<detail::ignore_t(detail::ignore_t)> {
+        -:  701:  typedef detail::swallow_assign type;
+        -:  702:};
+        -:  703:
+        -:  704:
+        -:  705:
+        -:  706:namespace detail {
+        -:  707:
+        -:  708:// a helper traits to make the make_tuple functions shorter (Vesa Karvonen's
+        -:  709:// suggestion)
+        -:  710:template <
+        -:  711:  class T0 = null_type, class T1 = null_type, class T2 = null_type,
+        -:  712:  class T3 = null_type, class T4 = null_type, class T5 = null_type,
+        -:  713:  class T6 = null_type, class T7 = null_type, class T8 = null_type,
+        -:  714:  class T9 = null_type
+        -:  715:>
+        -:  716:struct make_tuple_mapper {
+        -:  717:  typedef
+        -:  718:    tuple<typename make_tuple_traits<T0>::type,
+        -:  719:          typename make_tuple_traits<T1>::type,
+        -:  720:          typename make_tuple_traits<T2>::type,
+        -:  721:          typename make_tuple_traits<T3>::type,
+        -:  722:          typename make_tuple_traits<T4>::type,
+        -:  723:          typename make_tuple_traits<T5>::type,
+        -:  724:          typename make_tuple_traits<T6>::type,
+        -:  725:          typename make_tuple_traits<T7>::type,
+        -:  726:          typename make_tuple_traits<T8>::type,
+        -:  727:          typename make_tuple_traits<T9>::type> type;
+        -:  728:};
+        -:  729:
+        -:  730:} // end detail
+        -:  731:
+        -:  732:// -make_tuple function templates -----------------------------------
+        -:  733:inline tuple<> make_tuple() {
+        -:  734:  return tuple<>();
+        -:  735:}
+        -:  736:
+        -:  737:template<class T0>
+        -:  738:inline typename detail::make_tuple_mapper<T0>::type
+        -:  739:make_tuple(const T0& t0) {
+        -:  740:  typedef typename detail::make_tuple_mapper<T0>::type t;
+        -:  741:  return t(t0);
+        -:  742:}
+        -:  743:
+        -:  744:template<class T0, class T1>
+        -:  745:inline typename detail::make_tuple_mapper<T0, T1>::type
+        -:  746:make_tuple(const T0& t0, const T1& t1) {
+        -:  747:  typedef typename detail::make_tuple_mapper<T0, T1>::type t;
+        -:  748:  return t(t0, t1);
+        -:  749:}
+        -:  750:
+        -:  751:template<class T0, class T1, class T2>
+        -:  752:inline typename detail::make_tuple_mapper<T0, T1, T2>::type
+        -:  753:make_tuple(const T0& t0, const T1& t1, const T2& t2) {
+        -:  754:  typedef typename detail::make_tuple_mapper<T0, T1, T2>::type t;
+        -:  755:  return t(t0, t1, t2);
+        -:  756:}
+        -:  757:
+        -:  758:template<class T0, class T1, class T2, class T3>
+        -:  759:inline typename detail::make_tuple_mapper<T0, T1, T2, T3>::type
+        -:  760:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3) {
+        -:  761:  typedef typename detail::make_tuple_mapper<T0, T1, T2, T3>::type t;
+        -:  762:  return t(t0, t1, t2, t3);
+        -:  763:}
+        -:  764:
+        -:  765:template<class T0, class T1, class T2, class T3, class T4>
+        -:  766:inline typename detail::make_tuple_mapper<T0, T1, T2, T3, T4>::type
+        -:  767:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  768:                  const T4& t4) {
+        -:  769:  typedef typename detail::make_tuple_mapper<T0, T1, T2, T3, T4>::type t;
+        -:  770:  return t(t0, t1, t2, t3, t4);
+        -:  771:}
+        -:  772:
+        -:  773:template<class T0, class T1, class T2, class T3, class T4, class T5>
+        -:  774:inline typename detail::make_tuple_mapper<T0, T1, T2, T3, T4, T5>::type
+        -:  775:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  776:                  const T4& t4, const T5& t5) {
+        -:  777:  typedef typename detail::make_tuple_mapper<T0, T1, T2, T3, T4, T5>::type t;
+        -:  778:  return t(t0, t1, t2, t3, t4, t5);
+        -:  779:}
+        -:  780:
+        -:  781:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+        -:  782:inline typename detail::make_tuple_mapper<T0, T1, T2, T3, T4, T5, T6>::type
+        -:  783:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  784:                  const T4& t4, const T5& t5, const T6& t6) {
+        -:  785:  typedef typename detail::make_tuple_mapper
+        -:  786:           <T0, T1, T2, T3, T4, T5, T6>::type t;
+        -:  787:  return t(t0, t1, t2, t3, t4, t5, t6);
+        -:  788:}
+        -:  789:
+        -:  790:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  791:         class T7>
+        -:  792:inline typename detail::make_tuple_mapper<T0, T1, T2, T3, T4, T5, T6, T7>::type
+        -:  793:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  794:                  const T4& t4, const T5& t5, const T6& t6, const T7& t7) {
+        -:  795:  typedef typename detail::make_tuple_mapper
+        -:  796:           <T0, T1, T2, T3, T4, T5, T6, T7>::type t;
+        -:  797:  return t(t0, t1, t2, t3, t4, t5, t6, t7);
+        -:  798:}
+        -:  799:
+        -:  800:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  801:         class T7, class T8>
+        -:  802:inline typename detail::make_tuple_mapper
+        -:  803:  <T0, T1, T2, T3, T4, T5, T6, T7, T8>::type
+        -:  804:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  805:                  const T4& t4, const T5& t5, const T6& t6, const T7& t7,
+        -:  806:                  const T8& t8) {
+        -:  807:  typedef typename detail::make_tuple_mapper
+        -:  808:           <T0, T1, T2, T3, T4, T5, T6, T7, T8>::type t;
+        -:  809:  return t(t0, t1, t2, t3, t4, t5, t6, t7, t8);
+        -:  810:}
+        -:  811:
+        -:  812:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  813:         class T7, class T8, class T9>
+        -:  814:inline typename detail::make_tuple_mapper
+        -:  815:  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+        -:  816:make_tuple(const T0& t0, const T1& t1, const T2& t2, const T3& t3,
+        -:  817:                  const T4& t4, const T5& t5, const T6& t6, const T7& t7,
+        -:  818:                  const T8& t8, const T9& t9) {
+        -:  819:  typedef typename detail::make_tuple_mapper
+        -:  820:           <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type t;
+        -:  821:  return t(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+        -:  822:}
+        -:  823:
+        -:  824:namespace detail {
+        -:  825:
+        -:  826:template<class T>
+        -:  827:struct tie_traits {
+        -:  828:  typedef T& type;
+        -:  829:};
+        -:  830:
+        -:  831:template<>
+        -:  832:struct tie_traits<ignore_t(ignore_t)> {
+        -:  833:  typedef swallow_assign type;
+        -:  834:};
+        -:  835:
+        -:  836:template<>
+        -:  837:struct tie_traits<void> {
+        -:  838:  typedef null_type type;
+        -:  839:};
+        -:  840:
+        -:  841:template <
+        -:  842:  class T0 = void, class T1 = void, class T2 = void,
+        -:  843:  class T3 = void, class T4 = void, class T5 = void,
+        -:  844:  class T6 = void, class T7 = void, class T8 = void,
+        -:  845:  class T9 = void
+        -:  846:>
+        -:  847:struct tie_mapper {
+        -:  848:  typedef
+        -:  849:    tuple<typename tie_traits<T0>::type,
+        -:  850:          typename tie_traits<T1>::type,
+        -:  851:          typename tie_traits<T2>::type,
+        -:  852:          typename tie_traits<T3>::type,
+        -:  853:          typename tie_traits<T4>::type,
+        -:  854:          typename tie_traits<T5>::type,
+        -:  855:          typename tie_traits<T6>::type,
+        -:  856:          typename tie_traits<T7>::type,
+        -:  857:          typename tie_traits<T8>::type,
+        -:  858:          typename tie_traits<T9>::type> type;
+        -:  859:};
+        -:  860:
+        -:  861:}
+        -:  862:
+        -:  863:// Tie function templates -------------------------------------------------
+        -:  864:template<class T0>
+        -:  865:inline typename detail::tie_mapper<T0>::type
+        -:  866:tie(T0& t0) {
+        -:  867:  typedef typename detail::tie_mapper<T0>::type t;
+        -:  868:  return t(t0);
+        -:  869:}
+        -:  870:
+        -:  871:template<class T0, class T1>
+        -:  872:inline typename detail::tie_mapper<T0, T1>::type
+function _ZN5boost6tuples3tieISt23_Rb_tree_const_iteratorINS_6detail4sep_ImNS_11no_propertyEEEEbEENS0_6detail10tie_mapperIT_T0_vvvvvvvvE4typeERSA_RSB_ called 60224 returned 100% blocks executed 100%
+function _ZN5boost6tuples3tieINS_12range_detail16integer_iteratorImEES4_EENS0_6detail10tie_mapperIT_T0_vvvvvvvvE4typeERS7_RS8_ called 24 returned 100% blocks executed 100%
+function _ZN5boost6tuples3tieINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EENS0_6detail10tie_mapperIT_T0_vvvvvvvvE4typeERSF_RSG_ called 12 returned 100% blocks executed 100%
+    60260:  873:tie(T0& t0, T1& t1) {
+        -:  874:  typedef typename detail::tie_mapper<T0, T1>::type t;
+    60260:  875:  return t(t0, t1);
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+        -:  876:}
+        -:  877:
+        -:  878:template<class T0, class T1, class T2>
+        -:  879:inline typename detail::tie_mapper<T0, T1, T2>::type
+        -:  880:tie(T0& t0, T1& t1, T2& t2) {
+        -:  881:  typedef typename detail::tie_mapper<T0, T1, T2>::type t;
+        -:  882:  return t(t0, t1, t2);
+        -:  883:}
+        -:  884:
+        -:  885:template<class T0, class T1, class T2, class T3>
+        -:  886:inline typename detail::tie_mapper<T0, T1, T2, T3>::type
+        -:  887:tie(T0& t0, T1& t1, T2& t2, T3& t3) {
+        -:  888:  typedef typename detail::tie_mapper<T0, T1, T2, T3>::type t;
+        -:  889:  return t(t0, t1, t2, t3);
+        -:  890:}
+        -:  891:
+        -:  892:template<class T0, class T1, class T2, class T3, class T4>
+        -:  893:inline typename detail::tie_mapper<T0, T1, T2, T3, T4>::type
+        -:  894:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  895:                  T4& t4) {
+        -:  896:  typedef typename detail::tie_mapper<T0, T1, T2, T3, T4>::type t;
+        -:  897:  return t(t0, t1, t2, t3, t4);
+        -:  898:}
+        -:  899:
+        -:  900:template<class T0, class T1, class T2, class T3, class T4, class T5>
+        -:  901:inline typename detail::tie_mapper<T0, T1, T2, T3, T4, T5>::type
+        -:  902:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  903:                  T4& t4, T5& t5) {
+        -:  904:  typedef typename detail::tie_mapper<T0, T1, T2, T3, T4, T5>::type t;
+        -:  905:  return t(t0, t1, t2, t3, t4, t5);
+        -:  906:}
+        -:  907:
+        -:  908:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+        -:  909:inline typename detail::tie_mapper<T0, T1, T2, T3, T4, T5, T6>::type
+        -:  910:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  911:                  T4& t4, T5& t5, T6& t6) {
+        -:  912:  typedef typename detail::tie_mapper
+        -:  913:           <T0, T1, T2, T3, T4, T5, T6>::type t;
+        -:  914:  return t(t0, t1, t2, t3, t4, t5, t6);
+        -:  915:}
+        -:  916:
+        -:  917:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  918:         class T7>
+        -:  919:inline typename detail::tie_mapper<T0, T1, T2, T3, T4, T5, T6, T7>::type
+        -:  920:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  921:                  T4& t4, T5& t5, T6& t6, T7& t7) {
+        -:  922:  typedef typename detail::tie_mapper
+        -:  923:           <T0, T1, T2, T3, T4, T5, T6, T7>::type t;
+        -:  924:  return t(t0, t1, t2, t3, t4, t5, t6, t7);
+        -:  925:}
+        -:  926:
+        -:  927:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  928:         class T7, class T8>
+        -:  929:inline typename detail::tie_mapper
+        -:  930:  <T0, T1, T2, T3, T4, T5, T6, T7, T8>::type
+        -:  931:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  932:                  T4& t4, T5& t5, T6& t6, T7& t7,
+        -:  933:                  T8& t8) {
+        -:  934:  typedef typename detail::tie_mapper
+        -:  935:           <T0, T1, T2, T3, T4, T5, T6, T7, T8>::type t;
+        -:  936:  return t(t0, t1, t2, t3, t4, t5, t6, t7, t8);
+        -:  937:}
+        -:  938:
+        -:  939:template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+        -:  940:         class T7, class T8, class T9>
+        -:  941:inline typename detail::tie_mapper
+        -:  942:  <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type
+        -:  943:tie(T0& t0, T1& t1, T2& t2, T3& t3,
+        -:  944:                  T4& t4, T5& t5, T6& t6, T7& t7,
+        -:  945:                  T8& t8, T9& t9) {
+        -:  946:  typedef typename detail::tie_mapper
+        -:  947:           <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>::type t;
+        -:  948:  return t(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+        -:  949:}
+        -:  950:
+        -:  951:template <class T0, class T1, class T2, class T3, class T4,
+        -:  952:          class T5, class T6, class T7, class T8, class T9>
+        -:  953:void swap(tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>& lhs,
+        -:  954:          tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>& rhs);
+        -:  955:inline void swap(null_type&, null_type&) {}
+        -:  956:template<class HH>
+        -:  957:inline void swap(cons<HH, null_type>& lhs, cons<HH, null_type>& rhs) {
+        -:  958:  ::boost::swap(lhs.head, rhs.head);
+        -:  959:}
+        -:  960:template<class HH, class TT>
+        -:  961:inline void swap(cons<HH, TT>& lhs, cons<HH, TT>& rhs) {
+        -:  962:  ::boost::swap(lhs.head, rhs.head);
+        -:  963:  ::boost::tuples::swap(lhs.tail, rhs.tail);
+        -:  964:}
+        -:  965:template <class T0, class T1, class T2, class T3, class T4,
+        -:  966:          class T5, class T6, class T7, class T8, class T9>
+        -:  967:inline void swap(tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>& lhs,
+        -:  968:          tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>& rhs) {
+        -:  969:  typedef tuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> tuple_type;
+        -:  970:  typedef typename tuple_type::inherited base;
+        -:  971:  ::boost::tuples::swap(static_cast<base&>(lhs), static_cast<base&>(rhs));
+        -:  972:}
+        -:  973:
+        -:  974:} // end of namespace tuples
+        -:  975:} // end of namespace boost
+        -:  976:
+        -:  977:
+        -:  978:#endif // BOOST_TUPLE_BASIC_HPP
+        -:  979:
+        -:  980:

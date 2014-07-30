@@ -1,0 +1,136 @@
+        -:    0:Source:/usr/include/boost/smart_ptr/scoped_ptr.hpp
+        -:    0:Programs:1
+        -:    1:#ifndef BOOST_SMART_PTR_SCOPED_PTR_HPP_INCLUDED
+        -:    2:#define BOOST_SMART_PTR_SCOPED_PTR_HPP_INCLUDED
+        -:    3:
+        -:    4://  (C) Copyright Greg Colvin and Beman Dawes 1998, 1999.
+        -:    5://  Copyright (c) 2001, 2002 Peter Dimov
+        -:    6://
+        -:    7://  Distributed under the Boost Software License, Version 1.0. (See
+        -:    8://  accompanying file LICENSE_1_0.txt or copy at
+        -:    9://  http://www.boost.org/LICENSE_1_0.txt)
+        -:   10://
+        -:   11://  http://www.boost.org/libs/smart_ptr/scoped_ptr.htm
+        -:   12://
+        -:   13:
+        -:   14:#include <boost/assert.hpp>
+        -:   15:#include <boost/checked_delete.hpp>
+        -:   16:#include <boost/detail/workaround.hpp>
+        -:   17:
+        -:   18:#ifndef BOOST_NO_AUTO_PTR
+        -:   19:# include <memory>          // for std::auto_ptr
+        -:   20:#endif
+        -:   21:
+        -:   22:namespace boost
+        -:   23:{
+        -:   24:
+        -:   25:// Debug hooks
+        -:   26:
+        -:   27:#if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
+        -:   28:
+        -:   29:void sp_scalar_constructor_hook(void * p);
+        -:   30:void sp_scalar_destructor_hook(void * p);
+        -:   31:
+        -:   32:#endif
+        -:   33:
+        -:   34://  scoped_ptr mimics a built-in pointer except that it guarantees deletion
+        -:   35://  of the object pointed to, either on destruction of the scoped_ptr or via
+        -:   36://  an explicit reset(). scoped_ptr is a simple solution for simple needs;
+        -:   37://  use shared_ptr or std::auto_ptr if your needs are more complex.
+        -:   38:
+        -:   39:template<class T> class scoped_ptr // noncopyable
+        -:   40:{
+        -:   41:private:
+        -:   42:
+        -:   43:    T * px;
+        -:   44:
+        -:   45:    scoped_ptr(scoped_ptr const &);
+        -:   46:    scoped_ptr & operator=(scoped_ptr const &);
+        -:   47:
+        -:   48:    typedef scoped_ptr<T> this_type;
+        -:   49:
+        -:   50:    void operator==( scoped_ptr const& ) const;
+        -:   51:    void operator!=( scoped_ptr const& ) const;
+        -:   52:
+        -:   53:public:
+        -:   54:
+        -:   55:    typedef T element_type;
+        -:   56:
+function _ZN5boost10scoped_ptrINS_11no_propertyEEC2EPS1_ called 136 returned 100% blocks executed 100%
+      136:   57:    explicit scoped_ptr( T * p = 0 ): px( p ) // never throws
+        -:   58:    {
+        -:   59:#if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
+        -:   60:        boost::sp_scalar_constructor_hook( px );
+        -:   61:#endif
+      136:   62:    }
+        -:   63:
+        -:   64:#ifndef BOOST_NO_AUTO_PTR
+        -:   65:
+        -:   66:    explicit scoped_ptr( std::auto_ptr<T> p ): px( p.release() ) // never throws
+        -:   67:    {
+        -:   68:#if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
+        -:   69:        boost::sp_scalar_constructor_hook( px );
+        -:   70:#endif
+        -:   71:    }
+        -:   72:
+        -:   73:#endif
+        -:   74:
+function _ZN5boost10scoped_ptrINS_11no_propertyEED2Ev called 136 returned 100% blocks executed 100%
+      136:   75:    ~scoped_ptr() // never throws
+        -:   76:    {
+        -:   77:#if defined(BOOST_SP_ENABLE_DEBUG_HOOKS)
+        -:   78:        boost::sp_scalar_destructor_hook( px );
+        -:   79:#endif
+      136:   80:        boost::checked_delete( px );
+call    0 returned 100%
+      136:   81:    }
+        -:   82:
+        -:   83:    void reset(T * p = 0) // never throws
+        -:   84:    {
+        -:   85:        BOOST_ASSERT( p == 0 || p != px ); // catch self-reset errors
+        -:   86:        this_type(p).swap(*this);
+        -:   87:    }
+        -:   88:
+        -:   89:    T & operator*() const // never throws
+        -:   90:    {
+        -:   91:        BOOST_ASSERT( px != 0 );
+        -:   92:        return *px;
+        -:   93:    }
+        -:   94:
+        -:   95:    T * operator->() const // never throws
+        -:   96:    {
+        -:   97:        BOOST_ASSERT( px != 0 );
+        -:   98:        return px;
+        -:   99:    }
+        -:  100:
+        -:  101:    T * get() const // never throws
+        -:  102:    {
+        -:  103:        return px;
+        -:  104:    }
+        -:  105:
+        -:  106:// implicit conversion to "bool"
+        -:  107:#include <boost/smart_ptr/detail/operator_bool.hpp>
+        -:  108:
+        -:  109:    void swap(scoped_ptr & b) // never throws
+        -:  110:    {
+        -:  111:        T * tmp = b.px;
+        -:  112:        b.px = px;
+        -:  113:        px = tmp;
+        -:  114:    }
+        -:  115:};
+        -:  116:
+        -:  117:template<class T> inline void swap(scoped_ptr<T> & a, scoped_ptr<T> & b) // never throws
+        -:  118:{
+        -:  119:    a.swap(b);
+        -:  120:}
+        -:  121:
+        -:  122:// get_pointer(p) is a generic way to say p.get()
+        -:  123:
+        -:  124:template<class T> inline T * get_pointer(scoped_ptr<T> const & p)
+        -:  125:{
+        -:  126:    return p.get();
+        -:  127:}
+        -:  128:
+        -:  129:} // namespace boost
+        -:  130:
+        -:  131:#endif // #ifndef BOOST_SMART_PTR_SCOPED_PTR_HPP_INCLUDED

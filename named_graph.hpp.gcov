@@ -1,0 +1,541 @@
+        -:    0:Source:/usr/include/boost/graph/named_graph.hpp
+        -:    0:Programs:1
+        -:    1:// Copyright (C) 2007 Douglas Gregor
+        -:    2:
+        -:    3:// Use, modification and distribution is subject to the Boost Software
+        -:    4:// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+        -:    5:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    6:
+        -:    7:// Provides support for named vertices in graphs, allowing one to more
+        -:    8:// easily associate unique external names (URLs, city names, employee
+        -:    9:// ID numbers, etc.) with the vertices of a graph.
+        -:   10:#ifndef BOOST_GRAPH_NAMED_GRAPH_HPP
+        -:   11:#define BOOST_GRAPH_NAMED_GRAPH_HPP
+        -:   12:
+        -:   13:#include <boost/config.hpp>
+        -:   14:#include <boost/type_traits/remove_cv.hpp>
+        -:   15:#include <boost/type_traits/remove_reference.hpp>
+        -:   16:#include <boost/multi_index_container.hpp>
+        -:   17:#include <boost/multi_index/hashed_index.hpp>
+        -:   18:#include <boost/multi_index/member.hpp>
+        -:   19:#include <boost/optional.hpp>
+        -:   20:#include <boost/throw_exception.hpp>
+        -:   21:#include <stdexcept> // for std::runtime_error
+        -:   22:
+        -:   23:namespace boost { namespace graph {
+        -:   24:
+        -:   25:/*******************************************************************
+        -:   26: * User-customized traits                                          *
+        -:   27: *******************************************************************/
+        -:   28:
+        -:   29:/**
+        -:   30: * @brief Trait used to extract the internal vertex name from a vertex
+        -:   31: * property.
+        -:   32: *
+        -:   33: * To enable the use of internal vertex names in a graph type,
+        -:   34: * specialize the @c internal_vertex_name trait for your graph
+        -:   35: * property (e.g., @c a City class, which stores information about the
+        -:   36: * vertices in a road map).
+        -:   37: */
+        -:   38:template<typename VertexProperty>
+        -:   39:struct internal_vertex_name
+        -:   40:{
+        -:   41:  /**
+        -:   42:   *  The @c type field provides a function object that extracts a key
+        -:   43:   *  from the @c VertexProperty. The function object type must have a
+        -:   44:   *  nested @c result_type that provides the type of the key. For
+        -:   45:   *  more information, see the @c KeyExtractor concept in the
+        -:   46:   *  Boost.MultiIndex documentation: @c type must either be @c void
+        -:   47:   *  (if @c VertexProperty does not have an internal vertex name) or
+        -:   48:   *  a model of @c KeyExtractor.
+        -:   49:   */
+        -:   50:  typedef void type;
+        -:   51:};
+        -:   52:
+        -:   53:#ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:   54:/**
+        -:   55: * Extract the internal vertex name from a @c property structure by
+        -:   56: * looking at its base.
+        -:   57: */
+        -:   58:template<typename Tag, typename T, typename Base>
+        -:   59:struct internal_vertex_name<property<Tag, T, Base> >
+        -:   60:  : internal_vertex_name<Base> { };
+        -:   61:#endif
+        -:   62:
+        -:   63:/**
+        -:   64: * Construct an instance of @c VertexProperty directly from its
+        -:   65: * name. This function object should be used within the @c
+        -:   66: * internal_vertex_constructor trait.
+        -:   67: */
+        -:   68:template<typename VertexProperty>
+        -:   69:struct vertex_from_name
+        -:   70:{
+        -:   71:private:
+        -:   72:  typedef typename internal_vertex_name<VertexProperty>::type extract_name_type;
+        -:   73:
+        -:   74:  typedef typename remove_cv<
+        -:   75:            typename remove_reference<
+        -:   76:              typename extract_name_type::result_type>::type>::type
+        -:   77:    vertex_name_type;
+        -:   78:
+        -:   79:public:
+        -:   80:  typedef vertex_name_type argument_type;
+        -:   81:  typedef VertexProperty result_type;
+        -:   82:
+        -:   83:  VertexProperty operator()(const vertex_name_type& name)
+        -:   84:  {
+        -:   85:    return VertexProperty(name);
+        -:   86:  }
+        -:   87:};
+        -:   88:
+        -:   89:/**
+        -:   90: * Throw an exception whenever one tries to construct a @c
+        -:   91: * VertexProperty instance from its name.
+        -:   92: */
+        -:   93:template<typename VertexProperty>
+        -:   94:struct cannot_add_vertex
+        -:   95:{
+        -:   96:private:
+        -:   97:  typedef typename internal_vertex_name<VertexProperty>::type extract_name_type;
+        -:   98:
+        -:   99:  typedef typename remove_cv<
+        -:  100:            typename remove_reference<
+        -:  101:              typename extract_name_type::result_type>::type>::type
+        -:  102:    vertex_name_type;
+        -:  103:
+        -:  104:public:
+        -:  105:  typedef vertex_name_type argument_type;
+        -:  106:  typedef VertexProperty result_type;
+        -:  107:
+        -:  108:  VertexProperty operator()(const vertex_name_type& name)
+        -:  109:  {
+        -:  110:      boost::throw_exception(std::runtime_error("add_vertex: "
+        -:  111:                                                "unable to create a vertex from its name"));
+        -:  112:  }
+        -:  113:};
+        -:  114:
+        -:  115:/**
+        -:  116: * @brief Trait used to construct an instance of a @c VertexProperty,
+        -:  117: * which is a class type that stores the properties associated with a
+        -:  118: * vertex in a graph, from just the name of that vertex property. This
+        -:  119: * operation is used when an operation is required to map from a
+        -:  120: * vertex name to a vertex descriptor (e.g., to add an edge outgoing
+        -:  121: * from that vertex), but no vertex by the name exists. The function
+        -:  122: * object provided by this trait will be used to add new vertices
+        -:  123: * based only on their names. Since this cannot be done for arbitrary
+        -:  124: * types, the default behavior is to throw an exception when this
+        -:  125: * routine is called, which requires that all named vertices be added
+        -:  126: * before adding any edges by name.
+        -:  127: */
+        -:  128:template<typename VertexProperty>
+        -:  129:struct internal_vertex_constructor
+        -:  130:{
+        -:  131:  /**
+        -:  132:   * The @c type field provides a function object that constructs a
+        -:  133:   * new instance of @c VertexProperty from the name of the vertex (as
+        -:  134:   * determined by @c internal_vertex_name). The function object shall
+        -:  135:   * accept a vertex name and return a @c VertexProperty. Predefined
+        -:  136:   * options include:
+        -:  137:   *
+        -:  138:   *   @c vertex_from_name<VertexProperty>: construct an instance of
+        -:  139:   *   @c VertexProperty directly from the name.
+        -:  140:   *
+        -:  141:   *   @c cannot_add_vertex<VertexProperty>: the default value, which
+        -:  142:   *   throws an @c std::runtime_error if one attempts to add a vertex
+        -:  143:   *   given just the name.
+        -:  144:   */
+        -:  145:  typedef cannot_add_vertex<VertexProperty> type;
+        -:  146:};
+        -:  147:
+        -:  148:#ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  149:/**
+        -:  150: * Extract the internal vertex constructor from a @c property structure by
+        -:  151: * looking at its base.
+        -:  152: */
+        -:  153:template<typename Tag, typename T, typename Base>
+        -:  154:struct internal_vertex_constructor<property<Tag, T, Base> >
+        -:  155:  : internal_vertex_constructor<Base> { };
+        -:  156:#endif
+        -:  157:
+        -:  158:/*******************************************************************
+        -:  159: * Named graph-specific metafunctions                              *
+        -:  160: *******************************************************************/
+        -:  161:namespace detail {
+        -:  162:  /** @internal
+        -:  163:   * Extracts the type of a bundled vertex property from a vertex
+        -:  164:   * property. The primary template matches when we have hit the end
+        -:  165:   * of the @c property<> list.
+        -:  166:   */
+        -:  167:  template<typename VertexProperty>
+        -:  168:  struct extract_bundled_vertex
+        -:  169:  {
+        -:  170:    typedef VertexProperty type;
+        -:  171:  };
+        -:  172:
+        -:  173:  /** @internal
+        -:  174:   * Recursively extract the bundled vertex property from a vertex
+        -:  175:   * property.
+        -:  176:   */
+        -:  177:  template<typename Tag, typename T, typename Base>
+        -:  178:  struct extract_bundled_vertex<property<Tag, T, Base> >
+        -:  179:    : extract_bundled_vertex<Base>
+        -:  180:  { };
+        -:  181:
+        -:  182:  /**
+        -:  183:   * We have found the bundled vertex property type, marked with
+        -:  184:   * vertex_bundle_t.
+        -:  185:   */
+        -:  186:  template<typename T, typename Base>
+        -:  187:  struct extract_bundled_vertex<property<vertex_bundle_t, T, Base> >
+        -:  188:  {
+        -:  189:    typedef T type;
+        -:  190:  };
+        -:  191:
+        -:  192:  /**
+        -:  193:   * Translate @c no_property into @c error_property_not_found when we
+        -:  194:   * have failed to extract a bundled vertex property type.
+        -:  195:   */
+        -:  196:  template<>
+        -:  197:  struct extract_bundled_vertex<no_property>
+        -:  198:  {
+        -:  199:    typedef boost::detail::error_property_not_found type;
+        -:  200:  };
+        -:  201:}
+        -:  202:
+        -:  203:/*******************************************************************
+        -:  204: * Named graph mixin                                               *
+        -:  205: *******************************************************************/
+        -:  206:
+        -:  207:/**
+        -:  208: * named_graph is a mixin that provides names for the vertices of a
+        -:  209: * graph, including a mapping from names to vertices. Graph types that
+        -:  210: * may or may not be have vertex names (depending on the properties
+        -:  211: * supplied by the user) should use maybe_named_graph.
+        -:  212: *
+        -:  213: * Template parameters:
+        -:  214: *
+        -:  215: *   Graph: the graph type that derives from named_graph
+        -:  216: *
+        -:  217: *   Vertex: the type of a vertex descriptor in Graph. Note: we cannot
+        -:  218: *   use graph_traits here, because the Graph is not yet defined.
+        -:  219: *
+        -:  220: *   VertexProperty: the type stored with each vertex in the Graph.
+        -:  221: */
+        -:  222:template<typename Graph, typename Vertex, typename VertexProperty>
+        -:  223:class named_graph
+        -:  224:{
+        -:  225:public:
+        -:  226:  /// The type of the function object that extracts names from vertex
+        -:  227:  /// properties.
+        -:  228:  typedef typename internal_vertex_name<VertexProperty>::type extract_name_type;
+        -:  229:  /// The type of the "bundled" property, from which the name can be
+        -:  230:  /// extracted.
+        -:  231:  typedef typename detail::extract_bundled_vertex<VertexProperty>::type
+        -:  232:    bundled_vertex_property_type;
+        -:  233:
+        -:  234:  /// The type of the function object that generates vertex properties
+        -:  235:  /// from names, for the implicit addition of vertices.
+        -:  236:  typedef typename internal_vertex_constructor<VertexProperty>::type
+        -:  237:    vertex_constructor_type;
+        -:  238:
+        -:  239:  /// The type used to name vertices in the graph
+        -:  240:  typedef typename remove_cv<
+        -:  241:            typename remove_reference<
+        -:  242:              typename extract_name_type::result_type>::type>::type
+        -:  243:    vertex_name_type;
+        -:  244:
+        -:  245:  /// The type of vertex descriptors in the graph
+        -:  246:  typedef Vertex vertex_descriptor;
+        -:  247:
+        -:  248:private:
+        -:  249:  /// Key extractor for use with the multi_index_container
+        -:  250:  struct extract_name_from_vertex
+        -:  251:  {
+        -:  252:    typedef vertex_name_type result_type;
+        -:  253:
+        -:  254:    extract_name_from_vertex(Graph& graph, const extract_name_type& extract)
+        -:  255:      : graph(graph), extract(extract) { }
+        -:  256:
+        -:  257:    const result_type& operator()(Vertex vertex) const
+        -:  258:    {
+        -:  259:      return extract(graph[vertex]);
+        -:  260:    }
+        -:  261:
+        -:  262:    Graph& graph;
+        -:  263:    extract_name_type extract;
+        -:  264:  };
+        -:  265:
+        -:  266:public:
+        -:  267:  /// The type that maps names to vertices
+        -:  268:  typedef multi_index::multi_index_container<
+        -:  269:            Vertex,
+        -:  270:            multi_index::indexed_by<
+        -:  271:              multi_index::hashed_unique<multi_index::tag<vertex_name_t>,
+        -:  272:                                         extract_name_from_vertex> >
+        -:  273:          > named_vertices_type;
+        -:  274:
+        -:  275:  /// The set of vertices, indexed by name
+        -:  276:  typedef typename named_vertices_type::template index<vertex_name_t>::type
+        -:  277:    vertices_by_name_type;
+        -:  278:
+        -:  279:  /// Construct an instance of the named graph mixin, using the given
+        -:  280:  /// function object to extract a name from the bundled property
+        -:  281:  /// associated with a vertex.
+        -:  282:  named_graph(const extract_name_type& extract = extract_name_type(),
+        -:  283:              const vertex_constructor_type& vertex_constructor
+        -:  284:                = vertex_constructor_type());
+        -:  285:
+        -:  286:  /// Notify the named_graph that we have added the given vertex. The
+        -:  287:  /// name of the vertex will be added to the mapping.
+        -:  288:  void added_vertex(Vertex vertex);
+        -:  289:
+        -:  290:  /// Notify the named_graph that we are removing the given
+        -:  291:  /// vertex. The name of the vertex will be removed from the mapping.
+        -:  292:  void removing_vertex(Vertex vertex);
+        -:  293:
+        -:  294:  /// Notify the named_graph that we are clearing the graph.
+        -:  295:  /// This will clear out all of the name->vertex mappings
+        -:  296:  void clearing_graph();
+        -:  297:
+        -:  298:  /// Retrieve the derived instance
+        -:  299:  Graph&       derived()       { return static_cast<Graph&>(*this); }
+        -:  300:  const Graph& derived() const { return static_cast<const Graph&>(*this); }
+        -:  301:
+        -:  302:  /// Extract the name from a vertex property instance
+        -:  303:  typename extract_name_type::result_type
+        -:  304:  extract_name(const bundled_vertex_property_type& property);
+        -:  305:
+        -:  306:  /// Search for a vertex that has the given property (based on its
+        -:  307:  /// name)
+        -:  308:  optional<vertex_descriptor>
+        -:  309:  vertex_by_property(const bundled_vertex_property_type& property);
+        -:  310:
+        -:  311:  /// Mapping from names to vertices
+        -:  312:  named_vertices_type named_vertices;
+        -:  313:
+        -:  314:  /// Constructs a vertex from the name of that vertex
+        -:  315:  vertex_constructor_type vertex_constructor;
+        -:  316:};
+        -:  317:
+        -:  318:/// Helper macro containing the template parameters of named_graph
+        -:  319:#define BGL_NAMED_GRAPH_PARAMS \
+        -:  320:  typename Graph, typename Vertex, typename VertexProperty
+        -:  321:/// Helper macro containing the named_graph<...> instantiation
+        -:  322:#define BGL_NAMED_GRAPH \
+        -:  323:  named_graph<Graph, Vertex, VertexProperty>
+        -:  324:
+        -:  325:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  326:BGL_NAMED_GRAPH::named_graph(const extract_name_type& extract,
+        -:  327:                             const vertex_constructor_type& vertex_constructor)
+        -:  328:  : named_vertices(
+        -:  329:      typename named_vertices_type::ctor_args_list(
+        -:  330:        boost::make_tuple(
+        -:  331:          boost::make_tuple(
+        -:  332:            0, // initial number of buckets
+        -:  333:            extract_name_from_vertex(derived(), extract),
+        -:  334:            boost::hash<vertex_name_type>(),
+        -:  335:            std::equal_to<vertex_name_type>())))),
+        -:  336:    vertex_constructor(vertex_constructor)
+        -:  337:{
+        -:  338:}
+        -:  339:
+        -:  340:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  341:inline void BGL_NAMED_GRAPH::added_vertex(Vertex vertex)
+        -:  342:{
+        -:  343:  named_vertices.insert(vertex);
+        -:  344:}
+        -:  345:
+        -:  346:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  347:inline void BGL_NAMED_GRAPH::removing_vertex(Vertex vertex)
+        -:  348:{
+        -:  349:  named_vertices.erase(vertex);
+        -:  350:}
+        -:  351:
+        -:  352:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  353:inline void BGL_NAMED_GRAPH::clearing_graph()
+        -:  354:{
+        -:  355:  named_vertices.clear();
+        -:  356:}
+        -:  357:
+        -:  358:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  359:typename BGL_NAMED_GRAPH::extract_name_type::result_type
+        -:  360:BGL_NAMED_GRAPH::extract_name(const bundled_vertex_property_type& property)
+        -:  361:{
+        -:  362:  return named_vertices.key_extractor().extract(property);
+        -:  363:}
+        -:  364:
+        -:  365:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  366:optional<typename BGL_NAMED_GRAPH::vertex_descriptor>
+        -:  367:BGL_NAMED_GRAPH::
+        -:  368:vertex_by_property(const bundled_vertex_property_type& property)
+        -:  369:{
+        -:  370:  return find_vertex(extract_name(property), *this);
+        -:  371:}
+        -:  372:
+        -:  373:/// Retrieve the vertex associated with the given name
+        -:  374:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  375:optional<Vertex>
+        -:  376:find_vertex(typename BGL_NAMED_GRAPH::vertex_name_type const& name,
+        -:  377:            const BGL_NAMED_GRAPH& g)
+        -:  378:{
+        -:  379:  typedef typename BGL_NAMED_GRAPH::vertices_by_name_type
+        -:  380:    vertices_by_name_type;
+        -:  381:
+        -:  382:  // Retrieve the set of vertices indexed by name
+        -:  383:  vertices_by_name_type const& vertices_by_name
+        -:  384:    = g.named_vertices.template get<vertex_name_t>();
+        -:  385:
+        -:  386:  /// Look for a vertex with the given name
+        -:  387:  typename vertices_by_name_type::const_iterator iter
+        -:  388:    = vertices_by_name.find(name);
+        -:  389:
+        -:  390:  if (iter == vertices_by_name.end())
+        -:  391:    return optional<Vertex>(); // vertex not found
+        -:  392:  else
+        -:  393:    return *iter;
+        -:  394:}
+        -:  395:
+        -:  396:/// Retrieve the vertex associated with the given name, or add a new
+        -:  397:/// vertex with that name if no such vertex is available.
+        -:  398:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  399:Vertex
+        -:  400:add_vertex(typename BGL_NAMED_GRAPH::vertex_name_type const& name,
+        -:  401:           BGL_NAMED_GRAPH& g)
+        -:  402:{
+        -:  403:  if (optional<Vertex> vertex = find_vertex(name, g))
+        -:  404:    /// We found the vertex, so return it
+        -:  405:    return *vertex;
+        -:  406:  else
+        -:  407:    /// There is no vertex with the given name, so create one
+        -:  408:    return add_vertex(g.vertex_constructor(name), g.derived());
+        -:  409:}
+        -:  410:
+        -:  411:/// Add an edge using vertex names to refer to the vertices
+        -:  412:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  413:std::pair<typename graph_traits<Graph>::edge_descriptor, bool>
+        -:  414:add_edge(typename BGL_NAMED_GRAPH::vertex_name_type const& u_name,
+        -:  415:         typename BGL_NAMED_GRAPH::vertex_name_type const& v_name,
+        -:  416:         BGL_NAMED_GRAPH& g)
+        -:  417:{
+        -:  418:  return add_edge(add_vertex(u_name, g.derived()),
+        -:  419:                  add_vertex(v_name, g.derived()),
+        -:  420:                  g.derived());
+        -:  421:}
+        -:  422:
+        -:  423:/// Add an edge using vertex descriptors or names to refer to the vertices
+        -:  424:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  425:std::pair<typename graph_traits<Graph>::edge_descriptor, bool>
+        -:  426:add_edge(typename BGL_NAMED_GRAPH::vertex_descriptor const& u,
+        -:  427:         typename BGL_NAMED_GRAPH::vertex_name_type const& v_name,
+        -:  428:         BGL_NAMED_GRAPH& g)
+        -:  429:{
+        -:  430:  return add_edge(u,
+        -:  431:                  add_vertex(v_name, g.derived()),
+        -:  432:                  g.derived());
+        -:  433:}
+        -:  434:
+        -:  435:/// Add an edge using vertex descriptors or names to refer to the vertices
+        -:  436:template<BGL_NAMED_GRAPH_PARAMS>
+        -:  437:std::pair<typename graph_traits<Graph>::edge_descriptor, bool>
+        -:  438:add_edge(typename BGL_NAMED_GRAPH::vertex_name_type const& u_name,
+        -:  439:         typename BGL_NAMED_GRAPH::vertex_descriptor const& v,
+        -:  440:         BGL_NAMED_GRAPH& g)
+        -:  441:{
+        -:  442:  return add_edge(add_vertex(u_name, g.derived()),
+        -:  443:                  v,
+        -:  444:                  g.derived());
+        -:  445:}
+        -:  446:
+        -:  447:#undef BGL_NAMED_GRAPH
+        -:  448:#undef BGL_NAMED_GRAPH_PARAMS
+        -:  449:
+        -:  450:/*******************************************************************
+        -:  451: * Maybe named graph mixin                                         *
+        -:  452: *******************************************************************/
+        -:  453:
+        -:  454:#ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  455:/**
+        -:  456: * A graph mixin that can provide a mapping from names to vertices,
+        -:  457: * and use that mapping to simplify creation and manipulation of
+        -:  458: * graphs.
+        -:  459: */
+        -:  460:template<typename Graph, typename Vertex, typename VertexProperty,
+        -:  461:         typename ExtractName
+        -:  462:           = typename internal_vertex_name<VertexProperty>::type>
+        -:  463:struct maybe_named_graph : public named_graph<Graph, Vertex, VertexProperty>
+        -:  464:{
+        -:  465:};
+        -:  466:
+        -:  467:/**
+        -:  468: * A graph mixin that can provide a mapping from names to vertices,
+        -:  469: * and use that mapping to simplify creation and manipulation of
+        -:  470: * graphs. This partial specialization turns off this functionality
+        -:  471: * when the @c VertexProperty does not have an internal vertex name.
+        -:  472: */
+        -:  473:template<typename Graph, typename Vertex, typename VertexProperty>
+function _ZN5boost5graph17maybe_named_graphINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmS6_vEC2Ev called 136 returned 100% blocks executed 100%
+      136:  474:struct maybe_named_graph<Graph, Vertex, VertexProperty, void>
+        -:  475:{
+        -:  476:  /// The type of the "bundled" property, from which the name can be
+        -:  477:  /// extracted.
+        -:  478:  typedef typename detail::extract_bundled_vertex<VertexProperty>::type
+        -:  479:    bundled_vertex_property_type;
+        -:  480:
+        -:  481:  /// Notify the named_graph that we have added the given vertex. This
+        -:  482:  /// is a no-op.
+function _ZN5boost5graph17maybe_named_graphINS_14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES6_S6_NS_5listSEEEmS6_vE12added_vertexEm called 24744 returned 100% blocks executed 100%
+    24744:  483:  void added_vertex(Vertex) { }
+        -:  484:
+        -:  485:  /// Notify the named_graph that we are removing the given
+        -:  486:  /// vertex. This is a no-op.
+        -:  487:  void removing_vertex(Vertex) { }
+        -:  488:
+        -:  489:  /// Notify the named_graph that we are clearing the graph. This is a
+        -:  490:  /// no-op.
+        -:  491:  void clearing_graph() { }
+        -:  492:
+        -:  493:  /// Search for a vertex that has the given property (based on its
+        -:  494:  /// name). This always returns an empty optional<>
+        -:  495:  optional<Vertex>
+        -:  496:  vertex_by_property(const bundled_vertex_property_type&)
+        -:  497:  {
+        -:  498:    return optional<Vertex>();
+        -:  499:  }
+        -:  500:};
+        -:  501:#else
+        -:  502:template<typename Graph, typename Vertex, typename VertexProperty,
+        -:  503:         typename ExtractName
+        -:  504:           = typename internal_vertex_name<VertexProperty>::type>
+        -:  505:struct maybe_named_graph
+        -:  506:{
+        -:  507:  /// The type of the "bundled" property, from which the name can be
+        -:  508:  /// extracted.
+        -:  509:  typedef typename detail::extract_bundled_vertex<VertexProperty>::type
+        -:  510:    bundled_vertex_property_type;
+        -:  511:
+        -:  512:  /// Notify the named_graph that we have added the given vertex. This
+        -:  513:  /// is a no-op.
+        -:  514:  void added_vertex(Vertex) { }
+        -:  515:
+        -:  516:  /// Notify the named_graph that we are removing the given
+        -:  517:  /// vertex. This is a no-op.
+        -:  518:  void removing_vertex(Vertex) { }
+        -:  519:
+        -:  520:  /// Notify the named_graph that we are clearing the graph. This is a
+        -:  521:  /// no-op.
+        -:  522:  void clearing_graph() { }
+        -:  523:
+        -:  524:  /// Search for a vertex that has the given property (based on its
+        -:  525:  /// name). This always returns an empty optional<>
+        -:  526:  template<typename Property>
+        -:  527:  optional<Vertex>
+        -:  528:  vertex_by_property(const bundled_vertex_property_type&)
+        -:  529:  {
+        -:  530:    return optional<Vertex>();
+        -:  531:  }
+        -:  532:};
+        -:  533:#endif // BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  534:
+        -:  535:} } // end namespace boost::graph
+        -:  536:
+        -:  537:#endif // BOOST_GRAPH_NAMED_GRAPH_HPP

@@ -1,0 +1,1086 @@
+        -:    0:Source:/usr/include/boost/optional/optional.hpp
+        -:    0:Programs:1
+        -:    1:// Copyright (C) 2003, 2008 Fernando Luis Cacciola Carballal.
+        -:    2://
+        -:    3:// Use, modification, and distribution is subject to the Boost Software
+        -:    4:// License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+        -:    5:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    6://
+        -:    7:// See http://www.boost.org/libs/optional for documentation.
+        -:    8://
+        -:    9:// You are welcome to contact the author at:
+        -:   10://  fernando_cacciola@hotmail.com
+        -:   11://
+        -:   12:// Revisions:
+        -:   13:// 27 Apr 2008 (improved swap) Fernando Cacciola, Niels Dekker, Thorsten Ottosen
+        -:   14://
+        -:   15:#ifndef BOOST_OPTIONAL_OPTIONAL_FLC_19NOV2002_HPP
+        -:   16:#define BOOST_OPTIONAL_OPTIONAL_FLC_19NOV2002_HPP
+        -:   17:
+        -:   18:#include <new>
+        -:   19:#include <algorithm>
+        -:   20:
+        -:   21:#include <boost/config.hpp>
+        -:   22:#include <boost/assert.hpp>
+        -:   23:#include <boost/type.hpp>
+        -:   24:#include <boost/type_traits/alignment_of.hpp>
+        -:   25:#include <boost/type_traits/has_nothrow_constructor.hpp>
+        -:   26:#include <boost/type_traits/type_with_alignment.hpp>
+        -:   27:#include <boost/type_traits/remove_reference.hpp>
+        -:   28:#include <boost/type_traits/is_reference.hpp>
+        -:   29:#include <boost/mpl/if.hpp>
+        -:   30:#include <boost/mpl/bool.hpp>
+        -:   31:#include <boost/mpl/not.hpp>
+        -:   32:#include <boost/detail/reference_content.hpp>
+        -:   33:#include <boost/none.hpp>
+        -:   34:#include <boost/utility/swap.hpp>
+        -:   35:#include <boost/utility/addressof.hpp>
+        -:   36:#include <boost/utility/compare_pointees.hpp>
+        -:   37:#include <boost/utility/in_place_factory.hpp>
+        -:   38:
+        -:   39:#include <boost/optional/optional_fwd.hpp>
+        -:   40:
+        -:   41:#if BOOST_WORKAROUND(BOOST_MSVC, == 1200)
+        -:   42:// VC6.0 has the following bug:
+        -:   43://   When a templated assignment operator exist, an implicit conversion
+        -:   44://   constructing an optional<T> is used when assigment of the form:
+        -:   45://     optional<T> opt ; opt = T(...);
+        -:   46://   is compiled.
+        -:   47://   However, optional's ctor is _explicit_ and the assignemt shouldn't compile.
+        -:   48://   Therefore, for VC6.0 templated assignment is disabled.
+        -:   49://
+        -:   50:#define BOOST_OPTIONAL_NO_CONVERTING_ASSIGNMENT
+        -:   51:#endif
+        -:   52:
+        -:   53:#if BOOST_WORKAROUND(BOOST_MSVC, == 1300)
+        -:   54:// VC7.0 has the following bug:
+        -:   55://   When both a non-template and a template copy-ctor exist
+        -:   56://   and the templated version is made 'explicit', the explicit is also
+        -:   57://   given to the non-templated version, making the class non-implicitely-copyable.
+        -:   58://
+        -:   59:#define BOOST_OPTIONAL_NO_CONVERTING_COPY_CTOR
+        -:   60:#endif
+        -:   61:
+        -:   62:#if BOOST_WORKAROUND(BOOST_MSVC, <= 1300) || BOOST_WORKAROUND(BOOST_INTEL_CXX_VERSION,<=700)
+        -:   63:// AFAICT only VC7.1 correctly resolves the overload set
+        -:   64:// that includes the in-place factory taking functions,
+        -:   65:// so for the other VC versions, in-place factory support
+        -:   66:// is disabled
+        -:   67:#define BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT
+        -:   68:#endif
+        -:   69:
+        -:   70:#if BOOST_WORKAROUND(__BORLANDC__, <= 0x551)
+        -:   71:// BCB (5.5.1) cannot parse the nested template struct in an inplace factory.
+        -:   72:#define BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT
+        -:   73:#endif
+        -:   74:
+        -:   75:#if !defined(BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT) \
+        -:   76:    && BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x581) )
+        -:   77:// BCB (up to 5.64) has the following bug:
+        -:   78://   If there is a member function/operator template of the form
+        -:   79://     template<class Expr> mfunc( Expr expr ) ;
+        -:   80://   some calls are resolved to this even if there are other better matches.
+        -:   81://   The effect of this bug is that calls to converting ctors and assignments
+        -:   82://   are incrorrectly sink to this general catch-all member function template as shown above.
+        -:   83:#define BOOST_OPTIONAL_WEAK_OVERLOAD_RESOLUTION
+        -:   84:#endif
+        -:   85:
+        -:   86:#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) > 302 \
+        -:   87:    && !defined(__INTEL_COMPILER)
+        -:   88:// GCC since 3.3 has may_alias attribute that helps to alleviate optimizer issues with
+        -:   89:// regard to violation of the strict aliasing rules. The optional< T > storage type is marked
+        -:   90:// with this attribute in order to let the compiler know that it will alias objects of type T
+        -:   91:// and silence compilation warnings.
+        -:   92:#define BOOST_OPTIONAL_DETAIL_USE_ATTRIBUTE_MAY_ALIAS
+        -:   93:#endif
+        -:   94:
+        -:   95:// Daniel Wallin discovered that bind/apply.hpp badly interacts with the apply<>
+        -:   96:// member template of a factory as used in the optional<> implementation.
+        -:   97:// He proposed this simple fix which is to move the call to apply<> outside
+        -:   98:// namespace boost.
+        -:   99:namespace boost_optional_detail
+        -:  100:{
+        -:  101:  template <class T, class Factory>
+        -:  102:  inline void construct(Factory const& factory, void* address)
+        -:  103:  {
+        -:  104:    factory.BOOST_NESTED_TEMPLATE apply<T>(address);
+        -:  105:  }
+        -:  106:}
+        -:  107:
+        -:  108:
+        -:  109:namespace boost {
+        -:  110:
+        -:  111:class in_place_factory_base ;
+        -:  112:class typed_in_place_factory_base ;
+        -:  113:
+        -:  114:// This forward is needed to refer to namespace scope swap from the member swap
+        -:  115:template<class T> void swap ( optional<T>& x, optional<T>& y );
+        -:  116:
+        -:  117:namespace optional_detail {
+        -:  118:
+        -:  119:// This local class is used instead of that in "aligned_storage.hpp"
+        -:  120:// because I've found the 'official' class to ICE BCB5.5
+        -:  121:// when some types are used with optional<>
+        -:  122:// (due to sizeof() passed down as a non-type template parameter)
+        -:  123:template <class T>
+        -:  124:class aligned_storage
+        -:  125:{
+        -:  126:    // Borland ICEs if unnamed unions are used for this!
+        -:  127:    union
+        -:  128:    // This works around GCC warnings about breaking strict aliasing rules when casting storage address to T*
+        -:  129:#if defined(BOOST_OPTIONAL_DETAIL_USE_ATTRIBUTE_MAY_ALIAS)
+        -:  130:    __attribute__((may_alias))
+        -:  131:#endif
+        -:  132:    dummy_u
+        -:  133:    {
+        -:  134:        char data[ sizeof(T) ];
+        -:  135:        BOOST_DEDUCED_TYPENAME type_with_alignment<
+        -:  136:          ::boost::alignment_of<T>::value >::type aligner_;
+        -:  137:    } dummy_ ;
+        -:  138:
+        -:  139:  public:
+        -:  140:
+        -:  141:#if defined(BOOST_OPTIONAL_DETAIL_USE_ATTRIBUTE_MAY_ALIAS)
+function _ZNK5boost15optional_detail15aligned_storageISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE7addressEv called 68 returned 100% blocks executed 100%
+       68:  142:    void const* address() const { return &dummy_; }
+function _ZN5boost15optional_detail15aligned_storageISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE7addressEv called 220 returned 100% blocks executed 100%
+      220:  143:    void      * address()       { return &dummy_; }
+        -:  144:#else
+        -:  145:    void const* address() const { return dummy_.data; }
+        -:  146:    void      * address()       { return dummy_.data; }
+        -:  147:#endif
+        -:  148:} ;
+        -:  149:
+        -:  150:template<class T>
+        -:  151:struct types_when_isnt_ref
+        -:  152:{
+        -:  153:  typedef T const& reference_const_type ;
+        -:  154:  typedef T &      reference_type ;
+        -:  155:  typedef T const* pointer_const_type ;
+        -:  156:  typedef T *      pointer_type ;
+        -:  157:  typedef T const& argument_type ;
+        -:  158:} ;
+        -:  159:template<class T>
+        -:  160:struct types_when_is_ref
+        -:  161:{
+        -:  162:  typedef BOOST_DEDUCED_TYPENAME remove_reference<T>::type raw_type ;
+        -:  163:
+        -:  164:  typedef raw_type& reference_const_type ;
+        -:  165:  typedef raw_type& reference_type ;
+        -:  166:  typedef raw_type* pointer_const_type ;
+        -:  167:  typedef raw_type* pointer_type ;
+        -:  168:  typedef raw_type& argument_type ;
+        -:  169:} ;
+        -:  170:
+function _ZN5boost15optional_detail12optional_tagC2Ev called 72 returned 100% blocks executed 100%
+       72:  171:struct optional_tag {} ;
+        -:  172:
+        -:  173:template<class T>
+        -:  174:class optional_base : public optional_tag
+        -:  175:{
+        -:  176:  private :
+        -:  177:
+        -:  178:    typedef
+        -:  179:#if !BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x564))
+        -:  180:    BOOST_DEDUCED_TYPENAME
+        -:  181:#endif
+        -:  182:    ::boost::detail::make_reference_content<T>::type internal_type ;
+        -:  183:
+        -:  184:    typedef aligned_storage<internal_type> storage_type ;
+        -:  185:
+        -:  186:    typedef types_when_isnt_ref<T> types_when_not_ref ;
+        -:  187:    typedef types_when_is_ref<T>   types_when_ref   ;
+        -:  188:
+        -:  189:    typedef optional_base<T> this_type ;
+        -:  190:
+        -:  191:  protected :
+        -:  192:
+        -:  193:    typedef T value_type ;
+        -:  194:
+        -:  195:    typedef mpl::true_  is_reference_tag ;
+        -:  196:    typedef mpl::false_ is_not_reference_tag ;
+        -:  197:
+        -:  198:    typedef BOOST_DEDUCED_TYPENAME is_reference<T>::type is_reference_predicate ;
+        -:  199:
+        -:  200:  public:
+        -:  201:    typedef BOOST_DEDUCED_TYPENAME mpl::if_<is_reference_predicate,types_when_ref,types_when_not_ref>::type types ;
+        -:  202:
+        -:  203:  protected:
+        -:  204:    typedef bool (this_type::*unspecified_bool_type)() const;
+        -:  205:
+        -:  206:    typedef BOOST_DEDUCED_TYPENAME types::reference_type       reference_type ;
+        -:  207:    typedef BOOST_DEDUCED_TYPENAME types::reference_const_type reference_const_type ;
+        -:  208:    typedef BOOST_DEDUCED_TYPENAME types::pointer_type         pointer_type ;
+        -:  209:    typedef BOOST_DEDUCED_TYPENAME types::pointer_const_type   pointer_const_type ;
+        -:  210:    typedef BOOST_DEDUCED_TYPENAME types::argument_type        argument_type ;
+        -:  211:
+        -:  212:    // Creates an optional<T> uninitialized.
+        -:  213:    // No-throw
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EEC2Ev called 24 returned 100% blocks executed 100%
+       24:  214:    optional_base()
+        -:  215:      :
+       24:  216:      m_initialized(false) {}
+call    0 returned 100%
+        -:  217:
+        -:  218:    // Creates an optional<T> uninitialized.
+        -:  219:    // No-throw
+        -:  220:    optional_base ( none_t )
+        -:  221:      :
+        -:  222:      m_initialized(false) {}
+        -:  223:
+        -:  224:    // Creates an optional<T> initialized with 'val'.
+        -:  225:    // Can throw if T::T(T const&) does
+        -:  226:    optional_base ( argument_type val )
+        -:  227:      :
+        -:  228:      m_initialized(false)
+        -:  229:    {
+        -:  230:      construct(val);
+        -:  231:    }
+        -:  232:
+        -:  233:    // Creates an optional<T> initialized with 'val' IFF cond is true, otherwise creates an uninitialzed optional<T>.
+        -:  234:    // Can throw if T::T(T const&) does
+        -:  235:    optional_base ( bool cond, argument_type val )
+        -:  236:      :
+        -:  237:      m_initialized(false)
+        -:  238:    {
+        -:  239:      if ( cond )
+        -:  240:        construct(val);
+        -:  241:    }
+        -:  242:
+        -:  243:    // Creates a deep copy of another optional<T>
+        -:  244:    // Can throw if T::T(T const&) does
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EEC2ERKSF_ called 48 returned 100% blocks executed 100%
+       48:  245:    optional_base ( optional_base const& rhs )
+        -:  246:      :
+       48:  247:      m_initialized(false)
+call    0 returned 100%
+        -:  248:    {
+       48:  249:      if ( rhs.is_initialized() )
+call    0 returned 100%
+branch  1 taken 50% (fallthrough)
+branch  2 taken 50%
+       24:  250:        construct(rhs.get_impl());
+call    0 returned 100%
+call    1 returned 100%
+       48:  251:    }
+        -:  252:
+        -:  253:
+        -:  254:    // This is used for both converting and in-place constructions.
+        -:  255:    // Derived classes use the 'tag' to select the appropriate
+        -:  256:    // implementation (the correct 'construct()' overload)
+        -:  257:    template<class Expr>
+        -:  258:    explicit optional_base ( Expr const& expr, Expr const* tag )
+        -:  259:      :
+        -:  260:      m_initialized(false)
+        -:  261:    {
+        -:  262:      construct(expr,tag);
+        -:  263:    }
+        -:  264:
+        -:  265:
+        -:  266:
+        -:  267:    // No-throw (assuming T::~T() doesn't)
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EED2Ev called 72 returned 100% blocks executed 100%
+       72:  268:    ~optional_base() { destroy() ; }
+call    0 returned 100%
+        -:  269:
+        -:  270:    // Assigns from another optional<T> (deep-copies the rhs value)
+        -:  271:    void assign ( optional_base const& rhs )
+        -:  272:    {
+        -:  273:      if (is_initialized())
+        -:  274:      {
+        -:  275:        if ( rhs.is_initialized() )
+        -:  276:             assign_value(rhs.get_impl(), is_reference_predicate() );
+        -:  277:        else destroy();
+        -:  278:      }
+        -:  279:      else
+        -:  280:      {
+        -:  281:        if ( rhs.is_initialized() )
+        -:  282:          construct(rhs.get_impl());
+        -:  283:      }
+        -:  284:    }
+        -:  285:
+        -:  286:    // Assigns from another _convertible_ optional<U> (deep-copies the rhs value)
+        -:  287:    template<class U>
+        -:  288:    void assign ( optional<U> const& rhs )
+        -:  289:    {
+        -:  290:      if (is_initialized())
+        -:  291:      {
+        -:  292:        if ( rhs.is_initialized() )
+        -:  293:             assign_value(static_cast<value_type>(rhs.get()), is_reference_predicate() );
+        -:  294:        else destroy();
+        -:  295:      }
+        -:  296:      else
+        -:  297:      {
+        -:  298:        if ( rhs.is_initialized() )
+        -:  299:          construct(static_cast<value_type>(rhs.get()));
+        -:  300:      }
+        -:  301:    }
+        -:  302:
+        -:  303:    // Assigns from a T (deep-copies the rhs value)
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE6assignERKSE_ called 28 returned 100% blocks executed 86%
+       28:  304:    void assign ( argument_type val )
+        -:  305:    {
+       28:  306:      if (is_initialized())
+call    0 returned 100%
+branch  1 taken 57% (fallthrough)
+branch  2 taken 43%
+       16:  307:           assign_value(val, is_reference_predicate() );
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 never executed
+       12:  308:      else construct(val);
+call    0 returned 100%
+       28:  309:    }
+        -:  310:
+        -:  311:    // Assigns from "none", destroying the current value, if any, leaving this UNINITIALIZED
+        -:  312:    // No-throw (assuming T::~T() doesn't)
+        -:  313:    void assign ( none_t ) { destroy(); }
+        -:  314:
+        -:  315:#ifndef BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT
+        -:  316:    template<class Expr>
+        -:  317:    void assign_expr ( Expr const& expr, Expr const* tag )
+        -:  318:      {
+        -:  319:        if (is_initialized())
+        -:  320:             assign_expr_to_initialized(expr,tag);
+        -:  321:        else construct(expr,tag);
+        -:  322:      }
+        -:  323:#endif
+        -:  324:
+        -:  325:  public :
+        -:  326:
+        -:  327:    // Destroys the current value, if any, leaving this UNINITIALIZED
+        -:  328:    // No-throw (assuming T::~T() doesn't)
+        -:  329:    void reset() { destroy(); }
+        -:  330:
+        -:  331:    // Replaces the current value -if any- with 'val'
+        -:  332:    void reset ( argument_type val ) { assign(val); }
+        -:  333:
+        -:  334:    // Returns a pointer to the value if this is initialized, otherwise,
+        -:  335:    // returns NULL.
+        -:  336:    // No-throw
+        -:  337:    pointer_const_type get_ptr() const { return m_initialized ? get_ptr_impl() : 0 ; }
+        -:  338:    pointer_type       get_ptr()       { return m_initialized ? get_ptr_impl() : 0 ; }
+        -:  339:
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE14is_initializedEv called 252 returned 100% blocks executed 100%
+      252:  340:    bool is_initialized() const { return m_initialized ; }
+        -:  341:
+        -:  342:  protected :
+        -:  343:
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE9constructERKSE_ called 36 returned 100% blocks executed 83%
+       36:  344:    void construct ( argument_type val )
+        -:  345:     {
+       36:  346:       new (m_storage.address()) internal_type(val) ;
+call    0 returned 100%
+call    1 returned 100%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0%
+       36:  347:       m_initialized = true ;
+       36:  348:     }
+        -:  349:
+        -:  350:#ifndef BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT
+        -:  351:    // Constructs in-place using the given factory
+        -:  352:    template<class Expr>
+        -:  353:    void construct ( Expr const& factory, in_place_factory_base const* )
+        -:  354:     {
+        -:  355:       BOOST_STATIC_ASSERT ( ::boost::mpl::not_<is_reference_predicate>::value ) ;
+        -:  356:       boost_optional_detail::construct<value_type>(factory, m_storage.address());
+        -:  357:       m_initialized = true ;
+        -:  358:     }
+        -:  359:
+        -:  360:    // Constructs in-place using the given typed factory
+        -:  361:    template<class Expr>
+        -:  362:    void construct ( Expr const& factory, typed_in_place_factory_base const* )
+        -:  363:     {
+        -:  364:       BOOST_STATIC_ASSERT ( ::boost::mpl::not_<is_reference_predicate>::value ) ;
+        -:  365:       factory.apply(m_storage.address()) ;
+        -:  366:       m_initialized = true ;
+        -:  367:     }
+        -:  368:
+        -:  369:    template<class Expr>
+        -:  370:    void assign_expr_to_initialized ( Expr const& factory, in_place_factory_base const* tag )
+        -:  371:     {
+        -:  372:       destroy();
+        -:  373:       construct(factory,tag);
+        -:  374:     }
+        -:  375:
+        -:  376:    // Constructs in-place using the given typed factory
+        -:  377:    template<class Expr>
+        -:  378:    void assign_expr_to_initialized ( Expr const& factory, typed_in_place_factory_base const* tag )
+        -:  379:     {
+        -:  380:       destroy();
+        -:  381:       construct(factory,tag);
+        -:  382:     }
+        -:  383:#endif
+        -:  384:
+        -:  385:    // Constructs using any expression implicitely convertible to the single argument
+        -:  386:    // of a one-argument T constructor.
+        -:  387:    // Converting constructions of optional<T> from optional<U> uses this function with
+        -:  388:    // 'Expr' being of type 'U' and relying on a converting constructor of T from U.
+        -:  389:    template<class Expr>
+        -:  390:    void construct ( Expr const& expr, void const* )
+        -:  391:     {
+        -:  392:       new (m_storage.address()) internal_type(expr) ;
+        -:  393:       m_initialized = true ;
+        -:  394:     }
+        -:  395:
+        -:  396:    // Assigns using a form any expression implicitely convertible to the single argument
+        -:  397:    // of a T's assignment operator.
+        -:  398:    // Converting assignments of optional<T> from optional<U> uses this function with
+        -:  399:    // 'Expr' being of type 'U' and relying on a converting assignment of T from U.
+        -:  400:    template<class Expr>
+        -:  401:    void assign_expr_to_initialized ( Expr const& expr, void const* )
+        -:  402:     {
+        -:  403:       assign_value(expr, is_reference_predicate());
+        -:  404:     }
+        -:  405:
+        -:  406:#ifdef BOOST_OPTIONAL_WEAK_OVERLOAD_RESOLUTION
+        -:  407:    // BCB5.64 (and probably lower versions) workaround.
+        -:  408:    //   The in-place factories are supported by means of catch-all constructors
+        -:  409:    //   and assignment operators (the functions are parameterized in terms of
+        -:  410:    //   an arbitrary 'Expr' type)
+        -:  411:    //   This compiler incorrectly resolves the overload set and sinks optional<T> and optional<U>
+        -:  412:    //   to the 'Expr'-taking functions even though explicit overloads are present for them.
+        -:  413:    //   Thus, the following overload is needed to properly handle the case when the 'lhs'
+        -:  414:    //   is another optional.
+        -:  415:    //
+        -:  416:    // For VC<=70 compilers this workaround dosen't work becasue the comnpiler issues and error
+        -:  417:    // instead of choosing the wrong overload
+        -:  418:    //
+        -:  419:    // Notice that 'Expr' will be optional<T> or optional<U> (but not optional_base<..>)
+        -:  420:    template<class Expr>
+        -:  421:    void construct ( Expr const& expr, optional_tag const* )
+        -:  422:     {
+        -:  423:       if ( expr.is_initialized() )
+        -:  424:       {
+        -:  425:         // An exception can be thrown here.
+        -:  426:         // It it happens, THIS will be left uninitialized.
+        -:  427:         new (m_storage.address()) internal_type(expr.get()) ;
+        -:  428:         m_initialized = true ;
+        -:  429:       }
+        -:  430:     }
+        -:  431:#endif
+        -:  432:
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE12assign_valueERKSE_N4mpl_5bool_ILb0EEE called 16 returned 100% blocks executed 100%
+       16:  433:    void assign_value ( argument_type val, is_not_reference_tag ) { get_impl() = val; }
+call    0 returned 100%
+call    1 returned 100%
+        -:  434:    void assign_value ( argument_type val, is_reference_tag     ) { construct(val); }
+        -:  435:
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE7destroyEv called 72 returned 100% blocks executed 80%
+       72:  436:    void destroy()
+        -:  437:    {
+       72:  438:      if ( m_initialized )
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+       36:  439:        destroy_impl(is_reference_predicate()) ;
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 never executed
+       72:  440:    }
+        -:  441:
+        -:  442:    unspecified_bool_type safe_bool() const { return m_initialized ? &this_type::is_initialized : 0 ; }
+        -:  443:
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE8get_implEv called 24 returned 100% blocks executed 80%
+       24:  444:    reference_const_type get_impl() const { return dereference(get_object(), is_reference_predicate() ) ; }
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 returned 100%
+call    4 never executed
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE8get_implEv called 16 returned 100% blocks executed 80%
+       16:  445:    reference_type       get_impl()       { return dereference(get_object(), is_reference_predicate() ) ; }
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 returned 100%
+call    4 never executed
+        -:  446:
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE12get_ptr_implEv called 44 returned 100% blocks executed 80%
+       44:  447:    pointer_const_type get_ptr_impl() const { return cast_ptr(get_object(), is_reference_predicate() ) ; }
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 returned 100%
+call    4 never executed
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE12get_ptr_implEv called 168 returned 100% blocks executed 80%
+      168:  448:    pointer_type       get_ptr_impl()       { return cast_ptr(get_object(), is_reference_predicate() ) ; }
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 returned 100%
+call    4 never executed
+        -:  449:
+        -:  450:  private :
+        -:  451:
+        -:  452:    // internal_type can be either T or reference_content<T>
+        -:  453:#if defined(BOOST_OPTIONAL_DETAIL_USE_ATTRIBUTE_MAY_ALIAS)
+        -:  454:    // This workaround is supposed to silence GCC warnings about broken strict aliasing rules
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE10get_objectEv called 68 returned 100% blocks executed 100%
+       68:  455:    internal_type const* get_object() const
+        -:  456:    {
+       68:  457:        union { void const* ap_pvoid; internal_type const* as_ptype; } caster = { m_storage.address() };
+call    0 returned 100%
+       68:  458:        return caster.as_ptype;
+        -:  459:    }
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE10get_objectEv called 184 returned 100% blocks executed 100%
+      184:  460:    internal_type *      get_object()
+        -:  461:    {
+      184:  462:        union { void* ap_pvoid; internal_type* as_ptype; } caster = { m_storage.address() };
+call    0 returned 100%
+      184:  463:        return caster.as_ptype;
+        -:  464:    }
+        -:  465:#else
+        -:  466:    internal_type const* get_object() const { return static_cast<internal_type const*>(m_storage.address()); }
+        -:  467:    internal_type *      get_object()       { return static_cast<internal_type *>     (m_storage.address()); }
+        -:  468:#endif
+        -:  469:
+        -:  470:    // reference_content<T> lacks an implicit conversion to T&, so the following is needed to obtain a proper reference.
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE11dereferenceEPKSE_N4mpl_5bool_ILb0EEE called 24 returned 100% blocks executed 100%
+       24:  471:    reference_const_type dereference( internal_type const* p, is_not_reference_tag ) const { return *p ; }
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE11dereferenceEPSE_N4mpl_5bool_ILb0EEE called 16 returned 100% blocks executed 100%
+       16:  472:    reference_type       dereference( internal_type*       p, is_not_reference_tag )       { return *p ; }
+        -:  473:    reference_const_type dereference( internal_type const* p, is_reference_tag     ) const { return p->get() ; }
+        -:  474:    reference_type       dereference( internal_type*       p, is_reference_tag     )       { return p->get() ; }
+        -:  475:
+        -:  476:#if BOOST_WORKAROUND(__BORLANDC__, BOOST_TESTED_AT(0x581))
+        -:  477:    void destroy_impl ( is_not_reference_tag ) { get_ptr_impl()->internal_type::~internal_type() ; m_initialized = false ; }
+        -:  478:#else
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE12destroy_implEN4mpl_5bool_ILb0EEE called 36 returned 100% blocks executed 100%
+       36:  479:    void destroy_impl ( is_not_reference_tag ) { get_ptr_impl()->T::~T() ; m_initialized = false ; }
+call    0 returned 100%
+        -:  480:#endif
+        -:  481:
+        -:  482:    void destroy_impl ( is_reference_tag     ) { m_initialized = false ; }
+        -:  483:
+        -:  484:    // If T is of reference type, trying to get a pointer to the held value must result in a compile-time error.
+        -:  485:    // Decent compilers should disallow conversions from reference_content<T>* to T*, but just in case,
+        -:  486:    // the following olverloads are used to filter out the case and guarantee an error in case of T being a reference.
+function _ZNK5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE8cast_ptrEPKSE_N4mpl_5bool_ILb0EEE called 44 returned 100% blocks executed 100%
+       44:  487:    pointer_const_type cast_ptr( internal_type const* p, is_not_reference_tag ) const { return p ; }
+function _ZN5boost15optional_detail13optional_baseISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS3_4sep_ImNS_11no_propertyEEEEmNS3_14edge_desc_implINS_12directed_tagEmEElEESD_EE8cast_ptrEPSE_N4mpl_5bool_ILb0EEE called 168 returned 100% blocks executed 100%
+      168:  488:    pointer_type       cast_ptr( internal_type *      p, is_not_reference_tag )       { return p ; }
+        -:  489:    pointer_const_type cast_ptr( internal_type const* p, is_reference_tag     ) const { return &p->get() ; }
+        -:  490:    pointer_type       cast_ptr( internal_type *      p, is_reference_tag     )       { return &p->get() ; }
+        -:  491:
+        -:  492:    bool m_initialized ;
+        -:  493:    storage_type m_storage ;
+        -:  494:} ;
+        -:  495:
+        -:  496:} // namespace optional_detail
+        -:  497:
+        -:  498:template<class T>
+        -:  499:class optional : public optional_detail::optional_base<T>
+        -:  500:{
+        -:  501:    typedef optional_detail::optional_base<T> base ;
+        -:  502:
+        -:  503:    typedef BOOST_DEDUCED_TYPENAME base::unspecified_bool_type  unspecified_bool_type ;
+        -:  504:
+        -:  505:  public :
+        -:  506:
+        -:  507:    typedef optional<T> this_type ;
+        -:  508:
+        -:  509:    typedef BOOST_DEDUCED_TYPENAME base::value_type           value_type ;
+        -:  510:    typedef BOOST_DEDUCED_TYPENAME base::reference_type       reference_type ;
+        -:  511:    typedef BOOST_DEDUCED_TYPENAME base::reference_const_type reference_const_type ;
+        -:  512:    typedef BOOST_DEDUCED_TYPENAME base::pointer_type         pointer_type ;
+        -:  513:    typedef BOOST_DEDUCED_TYPENAME base::pointer_const_type   pointer_const_type ;
+        -:  514:    typedef BOOST_DEDUCED_TYPENAME base::argument_type        argument_type ;
+        -:  515:
+        -:  516:    // Creates an optional<T> uninitialized.
+        -:  517:    // No-throw
+function _ZN5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEC2Ev called 24 returned 100% blocks executed 100%
+       24:  518:    optional() : base() {}
+call    0 returned 100%
+        -:  519:
+        -:  520:    // Creates an optional<T> uninitialized.
+        -:  521:    // No-throw
+        -:  522:    optional( none_t none_ ) : base(none_) {}
+        -:  523:
+        -:  524:    // Creates an optional<T> initialized with 'val'.
+        -:  525:    // Can throw if T::T(T const&) does
+        -:  526:    optional ( argument_type val ) : base(val) {}
+        -:  527:
+        -:  528:    // Creates an optional<T> initialized with 'val' IFF cond is true, otherwise creates an uninitialized optional.
+        -:  529:    // Can throw if T::T(T const&) does
+        -:  530:    optional ( bool cond, argument_type val ) : base(cond,val) {}
+        -:  531:
+        -:  532:#ifndef BOOST_OPTIONAL_NO_CONVERTING_COPY_CTOR
+        -:  533:    // NOTE: MSVC needs templated versions first
+        -:  534:
+        -:  535:    // Creates a deep copy of another convertible optional<U>
+        -:  536:    // Requires a valid conversion from U to T.
+        -:  537:    // Can throw if T::T(U const&) does
+        -:  538:    template<class U>
+        -:  539:    explicit optional ( optional<U> const& rhs )
+        -:  540:      :
+        -:  541:      base()
+        -:  542:    {
+        -:  543:      if ( rhs.is_initialized() )
+        -:  544:        this->construct(rhs.get());
+        -:  545:    }
+        -:  546:#endif
+        -:  547:
+        -:  548:#ifndef BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT
+        -:  549:    // Creates an optional<T> with an expression which can be either
+        -:  550:    //  (a) An instance of InPlaceFactory (i.e. in_place(a,b,...,n);
+        -:  551:    //  (b) An instance of TypedInPlaceFactory ( i.e. in_place<T>(a,b,...,n);
+        -:  552:    //  (c) Any expression implicitely convertible to the single type
+        -:  553:    //      of a one-argument T's constructor.
+        -:  554:    //  (d*) Weak compilers (BCB) might also resolved Expr as optional<T> and optional<U>
+        -:  555:    //       even though explicit overloads are present for these.
+        -:  556:    // Depending on the above some T ctor is called.
+        -:  557:    // Can throw is the resolved T ctor throws.
+        -:  558:    template<class Expr>
+        -:  559:    explicit optional ( Expr const& expr ) : base(expr,boost::addressof(expr)) {}
+        -:  560:#endif
+        -:  561:
+        -:  562:    // Creates a deep copy of another optional<T>
+        -:  563:    // Can throw if T::T(T const&) does
+function _ZN5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEC2ERKSE_ called 48 returned 100% blocks executed 100%
+       48:  564:    optional ( optional const& rhs ) : base( static_cast<base const&>(rhs) ) {}
+call    0 returned 100%
+        -:  565:
+        -:  566:   // No-throw (assuming T::~T() doesn't)
+function _ZN5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EED2Ev called 72 returned 100% blocks executed 100%
+       72:  567:    ~optional() {}
+call    0 returned 100%
+        -:  568:
+        -:  569:#if !defined(BOOST_OPTIONAL_NO_INPLACE_FACTORY_SUPPORT) && !defined(BOOST_OPTIONAL_WEAK_OVERLOAD_RESOLUTION)
+        -:  570:    // Assigns from an expression. See corresponding constructor.
+        -:  571:    // Basic Guarantee: If the resolved T ctor throws, this is left UNINITIALIZED
+        -:  572:    template<class Expr>
+        -:  573:    optional& operator= ( Expr const& expr )
+        -:  574:      {
+        -:  575:        this->assign_expr(expr,boost::addressof(expr));
+        -:  576:        return *this ;
+        -:  577:      }
+        -:  578:#endif
+        -:  579:
+        -:  580:
+        -:  581:#ifndef BOOST_OPTIONAL_NO_CONVERTING_ASSIGNMENT
+        -:  582:    // Assigns from another convertible optional<U> (converts && deep-copies the rhs value)
+        -:  583:    // Requires a valid conversion from U to T.
+        -:  584:    // Basic Guarantee: If T::T( U const& ) throws, this is left UNINITIALIZED
+        -:  585:    template<class U>
+        -:  586:    optional& operator= ( optional<U> const& rhs )
+        -:  587:      {
+        -:  588:        this->assign(rhs);
+        -:  589:        return *this ;
+        -:  590:      }
+        -:  591:#endif
+        -:  592:
+        -:  593:    // Assigns from another optional<T> (deep-copies the rhs value)
+        -:  594:    // Basic Guarantee: If T::T( T const& ) throws, this is left UNINITIALIZED
+        -:  595:    //  (NOTE: On BCB, this operator is not actually called and left is left UNMODIFIED in case of a throw)
+        -:  596:    optional& operator= ( optional const& rhs )
+        -:  597:      {
+        -:  598:        this->assign( static_cast<base const&>(rhs) ) ;
+        -:  599:        return *this ;
+        -:  600:      }
+        -:  601:
+        -:  602:    // Assigns from a T (deep-copies the rhs value)
+        -:  603:    // Basic Guarantee: If T::( T const& ) throws, this is left UNINITIALIZED
+function _ZN5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEaSERKSD_ called 28 returned 100% blocks executed 100%
+       28:  604:    optional& operator= ( argument_type val )
+        -:  605:      {
+       28:  606:        this->assign( val ) ;
+call    0 returned 100%
+       28:  607:        return *this ;
+        -:  608:      }
+        -:  609:
+        -:  610:    // Assigns from a "none"
+        -:  611:    // Which destroys the current value, if any, leaving this UNINITIALIZED
+        -:  612:    // No-throw (assuming T::~T() doesn't)
+        -:  613:    optional& operator= ( none_t none_ )
+        -:  614:      {
+        -:  615:        this->assign( none_ ) ;
+        -:  616:        return *this ;
+        -:  617:      }
+        -:  618:
+        -:  619:    void swap( optional & arg )
+        -:  620:      {
+        -:  621:        // allow for Koenig lookup
+        -:  622:        using boost::swap;
+        -:  623:        swap(*this, arg);
+        -:  624:      }
+        -:  625:
+        -:  626:
+        -:  627:    // Returns a reference to the value if this is initialized, otherwise,
+        -:  628:    // the behaviour is UNDEFINED
+        -:  629:    // No-throw
+        -:  630:    reference_const_type get() const { BOOST_ASSERT(this->is_initialized()) ; return this->get_impl(); }
+        -:  631:    reference_type       get()       { BOOST_ASSERT(this->is_initialized()) ; return this->get_impl(); }
+        -:  632:
+        -:  633:    // Returns a copy of the value if this is initialized, 'v' otherwise
+        -:  634:    reference_const_type get_value_or ( reference_const_type v ) const { return this->is_initialized() ? get() : v ; }
+        -:  635:    reference_type       get_value_or ( reference_type       v )       { return this->is_initialized() ? get() : v ; }
+        -:  636:
+        -:  637:    // Returns a pointer to the value if this is initialized, otherwise,
+        -:  638:    // the behaviour is UNDEFINED
+        -:  639:    // No-throw
+function _ZNK5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEptEv called 44 returned 100% blocks executed 83%
+       44:  640:    pointer_const_type operator->() const { BOOST_ASSERT(this->is_initialized()) ; return this->get_ptr_impl() ; }
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+call    3 never executed
+call    4 returned 100%
+function _ZN5boost8optionalISt4pairINS_6detail13out_edge_iterISt23_Rb_tree_const_iteratorINS2_4sep_ImNS_11no_propertyEEEEmNS2_14edge_desc_implINS_12directed_tagEmEElEESC_EEptEv called 132 returned 100% blocks executed 83%
+      132:  641:    pointer_type       operator->()       { BOOST_ASSERT(this->is_initialized()) ; return this->get_ptr_impl() ; }
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+call    3 never executed
+call    4 returned 100%
+        -:  642:
+        -:  643:    // Returns a reference to the value if this is initialized, otherwise,
+        -:  644:    // the behaviour is UNDEFINED
+        -:  645:    // No-throw
+        -:  646:    reference_const_type operator *() const { return this->get() ; }
+        -:  647:    reference_type       operator *()       { return this->get() ; }
+        -:  648:
+        -:  649:    // implicit conversion to "bool"
+        -:  650:    // No-throw
+        -:  651:    operator unspecified_bool_type() const { return this->safe_bool() ; }
+        -:  652:
+        -:  653:    // This is provided for those compilers which don't like the conversion to bool
+        -:  654:    // on some contexts.
+        -:  655:    bool operator!() const { return !this->is_initialized() ; }
+        -:  656:} ;
+        -:  657:
+        -:  658:// Returns optional<T>(v)
+        -:  659:template<class T>
+        -:  660:inline
+        -:  661:optional<T> make_optional ( T const& v  )
+        -:  662:{
+        -:  663:  return optional<T>(v);
+        -:  664:}
+        -:  665:
+        -:  666:// Returns optional<T>(cond,v)
+        -:  667:template<class T>
+        -:  668:inline
+        -:  669:optional<T> make_optional ( bool cond, T const& v )
+        -:  670:{
+        -:  671:  return optional<T>(cond,v);
+        -:  672:}
+        -:  673:
+        -:  674:// Returns a reference to the value if this is initialized, otherwise, the behaviour is UNDEFINED.
+        -:  675:// No-throw
+        -:  676:template<class T>
+        -:  677:inline
+        -:  678:BOOST_DEDUCED_TYPENAME optional<T>::reference_const_type
+        -:  679:get ( optional<T> const& opt )
+        -:  680:{
+        -:  681:  return opt.get() ;
+        -:  682:}
+        -:  683:
+        -:  684:template<class T>
+        -:  685:inline
+        -:  686:BOOST_DEDUCED_TYPENAME optional<T>::reference_type
+        -:  687:get ( optional<T>& opt )
+        -:  688:{
+        -:  689:  return opt.get() ;
+        -:  690:}
+        -:  691:
+        -:  692:// Returns a pointer to the value if this is initialized, otherwise, returns NULL.
+        -:  693:// No-throw
+        -:  694:template<class T>
+        -:  695:inline
+        -:  696:BOOST_DEDUCED_TYPENAME optional<T>::pointer_const_type
+        -:  697:get ( optional<T> const* opt )
+        -:  698:{
+        -:  699:  return opt->get_ptr() ;
+        -:  700:}
+        -:  701:
+        -:  702:template<class T>
+        -:  703:inline
+        -:  704:BOOST_DEDUCED_TYPENAME optional<T>::pointer_type
+        -:  705:get ( optional<T>* opt )
+        -:  706:{
+        -:  707:  return opt->get_ptr() ;
+        -:  708:}
+        -:  709:
+        -:  710:// Returns a reference to the value if this is initialized, otherwise, the behaviour is UNDEFINED.
+        -:  711:// No-throw
+        -:  712:template<class T>
+        -:  713:inline
+        -:  714:BOOST_DEDUCED_TYPENAME optional<T>::reference_const_type
+        -:  715:get_optional_value_or ( optional<T> const& opt, BOOST_DEDUCED_TYPENAME optional<T>::reference_const_type v )
+        -:  716:{
+        -:  717:  return opt.get_value_or(v) ;
+        -:  718:}
+        -:  719:
+        -:  720:template<class T>
+        -:  721:inline
+        -:  722:BOOST_DEDUCED_TYPENAME optional<T>::reference_type
+        -:  723:get_optional_value_or ( optional<T>& opt, BOOST_DEDUCED_TYPENAME optional<T>::reference_type v )
+        -:  724:{
+        -:  725:  return opt.get_value_or(v) ;
+        -:  726:}
+        -:  727:
+        -:  728:// Returns a pointer to the value if this is initialized, otherwise, returns NULL.
+        -:  729:// No-throw
+        -:  730:template<class T>
+        -:  731:inline
+        -:  732:BOOST_DEDUCED_TYPENAME optional<T>::pointer_const_type
+        -:  733:get_pointer ( optional<T> const& opt )
+        -:  734:{
+        -:  735:  return opt.get_ptr() ;
+        -:  736:}
+        -:  737:
+        -:  738:template<class T>
+        -:  739:inline
+        -:  740:BOOST_DEDUCED_TYPENAME optional<T>::pointer_type
+        -:  741:get_pointer ( optional<T>& opt )
+        -:  742:{
+        -:  743:  return opt.get_ptr() ;
+        -:  744:}
+        -:  745:
+        -:  746:// optional's relational operators ( ==, !=, <, >, <=, >= ) have deep-semantics (compare values).
+        -:  747:// WARNING: This is UNLIKE pointers. Use equal_pointees()/less_pointess() in generic code instead.
+        -:  748:
+        -:  749:
+        -:  750://
+        -:  751:// optional<T> vs optional<T> cases
+        -:  752://
+        -:  753:
+        -:  754:template<class T>
+        -:  755:inline
+        -:  756:bool operator == ( optional<T> const& x, optional<T> const& y )
+        -:  757:{ return equal_pointees(x,y); }
+        -:  758:
+        -:  759:template<class T>
+        -:  760:inline
+        -:  761:bool operator < ( optional<T> const& x, optional<T> const& y )
+        -:  762:{ return less_pointees(x,y); }
+        -:  763:
+        -:  764:template<class T>
+        -:  765:inline
+        -:  766:bool operator != ( optional<T> const& x, optional<T> const& y )
+        -:  767:{ return !( x == y ) ; }
+        -:  768:
+        -:  769:template<class T>
+        -:  770:inline
+        -:  771:bool operator > ( optional<T> const& x, optional<T> const& y )
+        -:  772:{ return y < x ; }
+        -:  773:
+        -:  774:template<class T>
+        -:  775:inline
+        -:  776:bool operator <= ( optional<T> const& x, optional<T> const& y )
+        -:  777:{ return !( y < x ) ; }
+        -:  778:
+        -:  779:template<class T>
+        -:  780:inline
+        -:  781:bool operator >= ( optional<T> const& x, optional<T> const& y )
+        -:  782:{ return !( x < y ) ; }
+        -:  783:
+        -:  784:
+        -:  785://
+        -:  786:// optional<T> vs T cases
+        -:  787://
+        -:  788:template<class T>
+        -:  789:inline
+        -:  790:bool operator == ( optional<T> const& x, T const& y )
+        -:  791:{ return equal_pointees(x, optional<T>(y)); }
+        -:  792:
+        -:  793:template<class T>
+        -:  794:inline
+        -:  795:bool operator < ( optional<T> const& x, T const& y )
+        -:  796:{ return less_pointees(x, optional<T>(y)); }
+        -:  797:
+        -:  798:template<class T>
+        -:  799:inline
+        -:  800:bool operator != ( optional<T> const& x, T const& y )
+        -:  801:{ return !( x == y ) ; }
+        -:  802:
+        -:  803:template<class T>
+        -:  804:inline
+        -:  805:bool operator > ( optional<T> const& x, T const& y )
+        -:  806:{ return y < x ; }
+        -:  807:
+        -:  808:template<class T>
+        -:  809:inline
+        -:  810:bool operator <= ( optional<T> const& x, T const& y )
+        -:  811:{ return !( y < x ) ; }
+        -:  812:
+        -:  813:template<class T>
+        -:  814:inline
+        -:  815:bool operator >= ( optional<T> const& x, T const& y )
+        -:  816:{ return !( x < y ) ; }
+        -:  817:
+        -:  818://
+        -:  819:// T vs optional<T> cases
+        -:  820://
+        -:  821:
+        -:  822:template<class T>
+        -:  823:inline
+        -:  824:bool operator == ( T const& x, optional<T> const& y )
+        -:  825:{ return equal_pointees( optional<T>(x), y ); }
+        -:  826:
+        -:  827:template<class T>
+        -:  828:inline
+        -:  829:bool operator < ( T const& x, optional<T> const& y )
+        -:  830:{ return less_pointees( optional<T>(x), y ); }
+        -:  831:
+        -:  832:template<class T>
+        -:  833:inline
+        -:  834:bool operator != ( T const& x, optional<T> const& y )
+        -:  835:{ return !( x == y ) ; }
+        -:  836:
+        -:  837:template<class T>
+        -:  838:inline
+        -:  839:bool operator > ( T const& x, optional<T> const& y )
+        -:  840:{ return y < x ; }
+        -:  841:
+        -:  842:template<class T>
+        -:  843:inline
+        -:  844:bool operator <= ( T const& x, optional<T> const& y )
+        -:  845:{ return !( y < x ) ; }
+        -:  846:
+        -:  847:template<class T>
+        -:  848:inline
+        -:  849:bool operator >= ( T const& x, optional<T> const& y )
+        -:  850:{ return !( x < y ) ; }
+        -:  851:
+        -:  852:
+        -:  853://
+        -:  854:// optional<T> vs none cases
+        -:  855://
+        -:  856:
+        -:  857:template<class T>
+        -:  858:inline
+        -:  859:bool operator == ( optional<T> const& x, none_t )
+        -:  860:{ return equal_pointees(x, optional<T>() ); }
+        -:  861:
+        -:  862:template<class T>
+        -:  863:inline
+        -:  864:bool operator < ( optional<T> const& x, none_t )
+        -:  865:{ return less_pointees(x,optional<T>() ); }
+        -:  866:
+        -:  867:template<class T>
+        -:  868:inline
+        -:  869:bool operator != ( optional<T> const& x, none_t y )
+        -:  870:{ return !( x == y ) ; }
+        -:  871:
+        -:  872:template<class T>
+        -:  873:inline
+        -:  874:bool operator > ( optional<T> const& x, none_t y )
+        -:  875:{ return y < x ; }
+        -:  876:
+        -:  877:template<class T>
+        -:  878:inline
+        -:  879:bool operator <= ( optional<T> const& x, none_t y )
+        -:  880:{ return !( y < x ) ; }
+        -:  881:
+        -:  882:template<class T>
+        -:  883:inline
+        -:  884:bool operator >= ( optional<T> const& x, none_t y )
+        -:  885:{ return !( x < y ) ; }
+        -:  886:
+        -:  887://
+        -:  888:// none vs optional<T> cases
+        -:  889://
+        -:  890:
+        -:  891:template<class T>
+        -:  892:inline
+        -:  893:bool operator == ( none_t x, optional<T> const& y )
+        -:  894:{ return equal_pointees(optional<T>() ,y); }
+        -:  895:
+        -:  896:template<class T>
+        -:  897:inline
+        -:  898:bool operator < ( none_t x, optional<T> const& y )
+        -:  899:{ return less_pointees(optional<T>() ,y); }
+        -:  900:
+        -:  901:template<class T>
+        -:  902:inline
+        -:  903:bool operator != ( none_t x, optional<T> const& y )
+        -:  904:{ return !( x == y ) ; }
+        -:  905:
+        -:  906:template<class T>
+        -:  907:inline
+        -:  908:bool operator > ( none_t x, optional<T> const& y )
+        -:  909:{ return y < x ; }
+        -:  910:
+        -:  911:template<class T>
+        -:  912:inline
+        -:  913:bool operator <= ( none_t x, optional<T> const& y )
+        -:  914:{ return !( y < x ) ; }
+        -:  915:
+        -:  916:template<class T>
+        -:  917:inline
+        -:  918:bool operator >= ( none_t x, optional<T> const& y )
+        -:  919:{ return !( x < y ) ; }
+        -:  920:
+        -:  921:namespace optional_detail {
+        -:  922:
+        -:  923:template<bool use_default_constructor> struct swap_selector;
+        -:  924:
+        -:  925:template<>
+        -:  926:struct swap_selector<true>
+        -:  927:{
+        -:  928:    template<class T>
+        -:  929:    static void optional_swap ( optional<T>& x, optional<T>& y )
+        -:  930:    {
+        -:  931:        const bool hasX = !!x;
+        -:  932:        const bool hasY = !!y;
+        -:  933:
+        -:  934:        if ( !hasX && !hasY )
+        -:  935:            return;
+        -:  936:
+        -:  937:        if( !hasX )
+        -:  938:            x = boost::in_place();
+        -:  939:        else if ( !hasY )
+        -:  940:            y = boost::in_place();
+        -:  941:
+        -:  942:        // Boost.Utility.Swap will take care of ADL and workarounds for broken compilers
+        -:  943:        boost::swap(x.get(),y.get());
+        -:  944:
+        -:  945:        if( !hasX )
+        -:  946:            y = boost::none ;
+        -:  947:        else if( !hasY )
+        -:  948:            x = boost::none ;
+        -:  949:    }
+        -:  950:};
+        -:  951:
+        -:  952:template<>
+        -:  953:struct swap_selector<false>
+        -:  954:{
+        -:  955:    template<class T>
+        -:  956:    static void optional_swap ( optional<T>& x, optional<T>& y )
+        -:  957:    {
+        -:  958:        const bool hasX = !!x;
+        -:  959:        const bool hasY = !!y;
+        -:  960:
+        -:  961:        if ( !hasX && hasY )
+        -:  962:        {
+        -:  963:            x = y.get();
+        -:  964:            y = boost::none ;
+        -:  965:        }
+        -:  966:        else if ( hasX && !hasY )
+        -:  967:        {
+        -:  968:            y = x.get();
+        -:  969:            x = boost::none ;
+        -:  970:        }
+        -:  971:        else if ( hasX && hasY )
+        -:  972:        {
+        -:  973:            // Boost.Utility.Swap will take care of ADL and workarounds for broken compilers
+        -:  974:            boost::swap(x.get(),y.get());
+        -:  975:        }
+        -:  976:    }
+        -:  977:};
+        -:  978:
+        -:  979:} // namespace optional_detail
+        -:  980:
+        -:  981:template<class T>
+        -:  982:struct optional_swap_should_use_default_constructor : has_nothrow_default_constructor<T> {} ;
+        -:  983:
+        -:  984:template<class T> inline void swap ( optional<T>& x, optional<T>& y )
+        -:  985:{
+        -:  986:    optional_detail::swap_selector<optional_swap_should_use_default_constructor<T>::value>::optional_swap(x, y);
+        -:  987:}
+        -:  988:
+        -:  989:} // namespace boost
+        -:  990:
+        -:  991:#endif

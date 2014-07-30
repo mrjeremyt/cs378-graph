@@ -1,0 +1,638 @@
+        -:    0:Source:/usr/include/boost/graph/adjacency_list.hpp
+        -:    0:Programs:1
+        -:    1://=======================================================================
+        -:    2:// Copyright 1997, 1998, 1999, 2000 University of Notre Dame.
+        -:    3:// Copyright 2010 Thomas Claveirole
+        -:    4:// Authors: Andrew Lumsdaine, Lie-Quan Lee, Jeremy G. Siek, Thomas Claveirole
+        -:    5://
+        -:    6:// Distributed under the Boost Software License, Version 1.0. (See
+        -:    7:// accompanying file LICENSE_1_0.txt or copy at
+        -:    8:// http://www.boost.org/LICENSE_1_0.txt)
+        -:    9://=======================================================================
+        -:   10:
+        -:   11:#ifndef BOOST_GRAPH_ADJACENCY_LIST_HPP
+        -:   12:#define BOOST_GRAPH_ADJACENCY_LIST_HPP
+        -:   13:
+        -:   14:
+        -:   15:#include <boost/config.hpp>
+        -:   16:
+        -:   17:#include <vector>
+        -:   18:#include <list>
+        -:   19:#include <set>
+        -:   20:
+        -:   21:#include <boost/unordered_set.hpp>
+        -:   22:
+        -:   23:#if !defined BOOST_NO_SLIST
+        -:   24:#  ifdef BOOST_SLIST_HEADER
+        -:   25:#    include BOOST_SLIST_HEADER
+        -:   26:#  else
+        -:   27:#    include <slist>
+        -:   28:#  endif
+        -:   29:#endif
+        -:   30:
+        -:   31:#include <boost/scoped_ptr.hpp>
+        -:   32:
+        -:   33:#include <boost/graph/graph_traits.hpp>
+        -:   34:#include <boost/graph/graph_mutability_traits.hpp>
+        -:   35:#include <boost/graph/graph_selectors.hpp>
+        -:   36:#include <boost/property_map/property_map.hpp>
+        -:   37:#include <boost/mpl/if.hpp>
+        -:   38:#include <boost/mpl/and.hpp>
+        -:   39:#include <boost/mpl/not.hpp>
+        -:   40:#include <boost/mpl/bool.hpp>
+        -:   41:#include <boost/graph/detail/edge.hpp>
+        -:   42:#include <boost/type_traits/is_same.hpp>
+        -:   43:#include <boost/detail/workaround.hpp>
+        -:   44:#include <boost/graph/properties.hpp>
+        -:   45:#include <boost/graph/named_graph.hpp>
+        -:   46:
+        -:   47:namespace boost {
+        -:   48:
+        -:   49:  //===========================================================================
+        -:   50:  // Selectors for the VertexList and EdgeList template parameters of
+        -:   51:  // adjacency_list, and the container_gen traits class which is used
+        -:   52:  // to map the selectors to the container type used to implement the
+        -:   53:  // graph.
+        -:   54:  //
+        -:   55:  // The main container_gen traits class uses partial specialization,
+        -:   56:  // so we also include a workaround.
+        -:   57:
+        -:   58:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:   59:
+        -:   60:#if !defined BOOST_NO_SLIST
+        -:   61:  struct slistS {};
+        -:   62:#endif
+        -:   63:
+        -:   64:  struct vecS  { };
+        -:   65:  struct listS { };
+        -:   66:  struct setS { };
+        -:   67:  struct mapS  { };
+        -:   68:  struct multisetS { };
+        -:   69:  struct multimapS { };
+        -:   70:  struct hash_setS { };
+        -:   71:  struct hash_mapS { };
+        -:   72:  struct hash_multisetS { };
+        -:   73:  struct hash_multimapS { };
+        -:   74:
+        -:   75:  template <class Selector, class ValueType>
+        -:   76:  struct container_gen { };
+        -:   77:
+        -:   78:  template <class ValueType>
+        -:   79:  struct container_gen<listS, ValueType> {
+        -:   80:    typedef std::list<ValueType> type;
+        -:   81:  };
+        -:   82:#if !defined BOOST_NO_SLIST
+        -:   83:  template <class ValueType>
+        -:   84:  struct container_gen<slistS, ValueType> {
+        -:   85:    typedef BOOST_STD_EXTENSION_NAMESPACE::slist<ValueType> type;
+        -:   86:  };
+        -:   87:#endif
+        -:   88:  template <class ValueType>
+        -:   89:  struct container_gen<vecS, ValueType> {
+        -:   90:    typedef std::vector<ValueType> type;
+        -:   91:  };
+        -:   92:
+        -:   93:  template <class ValueType>
+        -:   94:  struct container_gen<mapS, ValueType> {
+        -:   95:    typedef std::set<ValueType> type;
+        -:   96:  };
+        -:   97:
+        -:   98:  template <class ValueType>
+        -:   99:  struct container_gen<setS, ValueType> {
+        -:  100:    typedef std::set<ValueType> type;
+        -:  101:  };
+        -:  102:
+        -:  103:  template <class ValueType>
+        -:  104:  struct container_gen<multisetS, ValueType> {
+        -:  105:    typedef std::multiset<ValueType> type;
+        -:  106:  };
+        -:  107:
+        -:  108:  template <class ValueType>
+        -:  109:  struct container_gen<multimapS, ValueType> {
+        -:  110:    typedef std::multiset<ValueType> type;
+        -:  111:  };
+        -:  112:
+        -:  113:  template <class ValueType>
+        -:  114:  struct container_gen<hash_setS, ValueType> {
+        -:  115:    typedef boost::unordered_set<ValueType> type;
+        -:  116:  };
+        -:  117:
+        -:  118:  template <class ValueType>
+        -:  119:  struct container_gen<hash_mapS, ValueType> {
+        -:  120:    typedef boost::unordered_set<ValueType> type;
+        -:  121:  };
+        -:  122:
+        -:  123:  template <class ValueType>
+        -:  124:  struct container_gen<hash_multisetS, ValueType> {
+        -:  125:    typedef boost::unordered_multiset<ValueType> type;
+        -:  126:  };
+        -:  127:
+        -:  128:  template <class ValueType>
+        -:  129:  struct container_gen<hash_multimapS, ValueType> {
+        -:  130:    typedef boost::unordered_multiset<ValueType> type;
+        -:  131:  };
+        -:  132:
+        -:  133:#else // !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  134:
+        -:  135:#if !defined BOOST_NO_SLIST
+        -:  136:  struct slistS {
+        -:  137:    template <class T>
+        -:  138:    struct bind_ { typedef BOOST_STD_EXTENSION_NAMESPACE::slist<T> type; };
+        -:  139:  };
+        -:  140:#endif
+        -:  141:
+        -:  142:  struct vecS  {
+        -:  143:    template <class T>
+        -:  144:    struct bind_ { typedef std::vector<T> type; };
+        -:  145:  };
+        -:  146:
+        -:  147:  struct listS {
+        -:  148:    template <class T>
+        -:  149:    struct bind_ { typedef std::list<T> type; };
+        -:  150:  };
+        -:  151:
+        -:  152:  struct setS  {
+        -:  153:    template <class T>
+        -:  154:    struct bind_ { typedef std::set<T, std::less<T> > type; };
+        -:  155:  };
+        -:  156:
+        -:  157:
+        -:  158:  struct mapS  {
+        -:  159:    template <class T>
+        -:  160:    struct bind_ { typedef std::set<T, std::less<T> > type; };
+        -:  161:  };
+        -:  162:
+        -:  163:  struct multisetS  {
+        -:  164:    template <class T>
+        -:  165:    struct bind_ { typedef std::multiset<T, std::less<T> > type; };
+        -:  166:  };
+        -:  167:
+        -:  168:  struct multimapS  {
+        -:  169:    template <class T>
+        -:  170:    struct bind_ { typedef std::multiset<T, std::less<T> > type; };
+        -:  171:  };
+        -:  172:
+        -:  173:  struct hash_setS {
+        -:  174:    template <class T>
+        -:  175:    struct bind_ { typedef boost::unordered_set<T> type; };
+        -:  176:  };
+        -:  177:
+        -:  178:  struct hash_mapS {
+        -:  179:    template <class T>
+        -:  180:    struct bind_ { typedef boost::unordered_set<T> type; };
+        -:  181:  };
+        -:  182:
+        -:  183:  struct hash_multisetS {
+        -:  184:    template <class T>
+        -:  185:    struct bind_ { typedef boost::unordered_multiset<T> type; };
+        -:  186:  };
+        -:  187:
+        -:  188:  struct hash_multimapS {
+        -:  189:    template <class T>
+        -:  190:    struct bind_ { typedef boost::unordered_multiset<T> type; };
+        -:  191:  };
+        -:  192:
+        -:  193:  template <class Selector> struct container_selector {
+        -:  194:    typedef vecS type;
+        -:  195:  };
+        -:  196:
+        -:  197:#define BOOST_CONTAINER_SELECTOR(NAME) \
+        -:  198:  template <> struct container_selector<NAME>  { \
+        -:  199:    typedef NAME type; \
+        -:  200:  }
+        -:  201:
+        -:  202:  BOOST_CONTAINER_SELECTOR(vecS);
+        -:  203:  BOOST_CONTAINER_SELECTOR(listS);
+        -:  204:  BOOST_CONTAINER_SELECTOR(mapS);
+        -:  205:  BOOST_CONTAINER_SELECTOR(setS);
+        -:  206:  BOOST_CONTAINER_SELECTOR(multisetS);
+        -:  207:  BOOST_CONTAINER_SELECTOR(hash_mapS);
+        -:  208:#if !defined BOOST_NO_SLIST
+        -:  209:  BOOST_CONTAINER_SELECTOR(slistS);
+        -:  210:#endif
+        -:  211:
+        -:  212:  template <class Selector, class ValueType>
+        -:  213:  struct container_gen {
+        -:  214:    typedef typename container_selector<Selector>::type Select;
+        -:  215:    typedef typename Select:: template bind_<ValueType>::type type;
+        -:  216:  };
+        -:  217:
+        -:  218:#endif // !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  219:
+        -:  220:  template <class StorageSelector>
+        -:  221:  struct parallel_edge_traits { };
+        -:  222:
+        -:  223:  template <>
+        -:  224:  struct parallel_edge_traits<vecS> {
+        -:  225:    typedef allow_parallel_edge_tag type; };
+        -:  226:
+        -:  227:  template <>
+        -:  228:  struct parallel_edge_traits<listS> {
+        -:  229:    typedef allow_parallel_edge_tag type; };
+        -:  230:
+        -:  231:#if !defined BOOST_NO_SLIST
+        -:  232:  template <>
+        -:  233:  struct parallel_edge_traits<slistS> {
+        -:  234:    typedef allow_parallel_edge_tag type; };
+        -:  235:#endif
+        -:  236:
+        -:  237:  template <>
+        -:  238:  struct parallel_edge_traits<setS> {
+        -:  239:    typedef disallow_parallel_edge_tag type; };
+        -:  240:
+        -:  241:  template <>
+        -:  242:  struct parallel_edge_traits<multisetS> {
+        -:  243:    typedef allow_parallel_edge_tag type; };
+        -:  244:
+        -:  245:  template <>
+        -:  246:  struct parallel_edge_traits<hash_setS> {
+        -:  247:    typedef disallow_parallel_edge_tag type;
+        -:  248:  };
+        -:  249:
+        -:  250:  // mapS is obsolete, replaced with setS
+        -:  251:  template <>
+        -:  252:  struct parallel_edge_traits<mapS> {
+        -:  253:    typedef disallow_parallel_edge_tag type; };
+        -:  254:
+        -:  255:  template <>
+        -:  256:  struct parallel_edge_traits<hash_mapS> {
+        -:  257:    typedef disallow_parallel_edge_tag type;
+        -:  258:  };
+        -:  259:
+        -:  260:  template <>
+        -:  261:  struct parallel_edge_traits<hash_multisetS> {
+        -:  262:    typedef allow_parallel_edge_tag type;
+        -:  263:  };
+        -:  264:
+        -:  265:  template <>
+        -:  266:  struct parallel_edge_traits<hash_multimapS> {
+        -:  267:    typedef allow_parallel_edge_tag type;
+        -:  268:  };
+        -:  269:
+        -:  270:  namespace detail {
+        -:  271:    template <class Directed> struct is_random_access {
+        -:  272:      enum { value = false};
+        -:  273:      typedef mpl::false_ type;
+        -:  274:    };
+        -:  275:    template <>
+        -:  276:    struct is_random_access<vecS> {
+        -:  277:      enum { value = true };
+        -:  278:      typedef mpl::true_ type;
+        -:  279:    };
+        -:  280:
+        -:  281:  } // namespace detail
+        -:  282:
+        -:  283:
+        -:  284:
+        -:  285:  //===========================================================================
+        -:  286:  // The adjacency_list_traits class, which provides a way to access
+        -:  287:  // some of the associated types of an adjacency_list type without
+        -:  288:  // having to first create the adjacency_list type. This is useful
+        -:  289:  // when trying to create interior vertex or edge properties who's
+        -:  290:  // value type is a vertex or edge descriptor.
+        -:  291:
+        -:  292:  template <class OutEdgeListS = vecS,
+        -:  293:            class VertexListS = vecS,
+        -:  294:            class DirectedS = directedS,
+        -:  295:            class EdgeListS = listS>
+        -:  296:  struct adjacency_list_traits
+        -:  297:  {
+        -:  298:    typedef typename detail::is_random_access<VertexListS>::type
+        -:  299:      is_rand_access;
+        -:  300:    typedef typename DirectedS::is_bidir_t is_bidir;
+        -:  301:    typedef typename DirectedS::is_directed_t is_directed;
+        -:  302:
+        -:  303:    typedef typename mpl::if_<is_bidir,
+        -:  304:      bidirectional_tag,
+        -:  305:      typename mpl::if_<is_directed,
+        -:  306:        directed_tag, undirected_tag
+        -:  307:      >::type
+        -:  308:    >::type directed_category;
+        -:  309:
+        -:  310:    typedef typename parallel_edge_traits<OutEdgeListS>::type
+        -:  311:      edge_parallel_category;
+        -:  312:
+        -:  313:    typedef std::size_t vertices_size_type;
+        -:  314:    typedef void* vertex_ptr;
+        -:  315:    typedef typename mpl::if_<is_rand_access,
+        -:  316:      vertices_size_type, vertex_ptr>::type vertex_descriptor;
+        -:  317:    typedef detail::edge_desc_impl<directed_category, vertex_descriptor>
+        -:  318:      edge_descriptor;
+        -:  319:
+        -:  320:  private:
+        -:  321:    // Logic to figure out the edges_size_type
+        -:  322:    struct dummy {};
+        -:  323:    typedef typename container_gen<EdgeListS, dummy>::type EdgeContainer;
+        -:  324:    typedef typename DirectedS::is_bidir_t BidirectionalT;
+        -:  325:    typedef typename DirectedS::is_directed_t DirectedT;
+        -:  326:    typedef typename mpl::and_<DirectedT,
+        -:  327:      typename mpl::not_<BidirectionalT>::type >::type on_edge_storage;
+        -:  328:  public:
+        -:  329:    typedef typename mpl::if_<on_edge_storage,
+        -:  330:       std::size_t, typename EdgeContainer::size_type
+        -:  331:    >::type edges_size_type;
+        -:  332:
+        -:  333:  };
+        -:  334:
+        -:  335:} // namespace boost
+        -:  336:
+        -:  337:#include <boost/graph/detail/adjacency_list.hpp>
+        -:  338:
+        -:  339:namespace boost {
+        -:  340:
+        -:  341:  //===========================================================================
+        -:  342:  // The adjacency_list class.
+        -:  343:  //
+        -:  344:
+        -:  345:  template <class OutEdgeListS = vecS, // a Sequence or an AssociativeContainer
+        -:  346:            class VertexListS = vecS, // a Sequence or a RandomAccessContainer
+        -:  347:            class DirectedS = directedS,
+        -:  348:            class VertexProperty = no_property,
+        -:  349:            class EdgeProperty = no_property,
+        -:  350:            class GraphProperty = no_property,
+        -:  351:            class EdgeListS = listS>
+function _ZN5boost14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES4_S4_NS_5listSEED2Ev called 136 returned 100% blocks executed 60%
+      136:  352:  class adjacency_list
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0% (throw)
+call    2 returned 100%
+call    3 returned 100%
+call    4 never executed
+call    5 never executed
+        -:  353:    : public detail::adj_list_gen<
+        -:  354:      adjacency_list<OutEdgeListS,VertexListS,DirectedS,
+        -:  355:                     VertexProperty,EdgeProperty,GraphProperty,EdgeListS>,
+        -:  356:      VertexListS, OutEdgeListS, DirectedS,
+        -:  357:#if !defined(BOOST_GRAPH_NO_BUNDLED_PROPERTIES)
+        -:  358:      typename detail::retag_property_list<vertex_bundle_t,
+        -:  359:                                           VertexProperty>::type,
+        -:  360:      typename detail::retag_property_list<edge_bundle_t, EdgeProperty>::type,
+        -:  361:#else
+        -:  362:      VertexProperty, EdgeProperty,
+        -:  363:#endif
+        -:  364:      GraphProperty, EdgeListS>::type,
+        -:  365:      // Support for named vertices
+        -:  366:      public graph::maybe_named_graph<
+        -:  367:        adjacency_list<OutEdgeListS,VertexListS,DirectedS,
+        -:  368:                       VertexProperty,EdgeProperty,GraphProperty,EdgeListS>,
+        -:  369:        typename adjacency_list_traits<OutEdgeListS, VertexListS, DirectedS,
+        -:  370:                                       EdgeListS>::vertex_descriptor,
+        -:  371:        VertexProperty>
+        -:  372:  {
+        -:  373:      public:
+        -:  374:#if !defined(BOOST_GRAPH_NO_BUNDLED_PROPERTIES)
+        -:  375:    typedef typename graph_detail::graph_prop<GraphProperty>::property graph_property_type;
+        -:  376:    typedef typename graph_detail::graph_prop<GraphProperty>::bundle graph_bundled;
+        -:  377:
+        -:  378:    typedef typename graph_detail::vertex_prop<VertexProperty>::property vertex_property_type;
+        -:  379:    typedef typename graph_detail::vertex_prop<VertexProperty>::bundle vertex_bundled;
+        -:  380:
+        -:  381:    typedef typename graph_detail::edge_prop<EdgeProperty>::property edge_property_type;
+        -:  382:    typedef typename graph_detail::edge_prop<EdgeProperty>::bundle edge_bundled;
+        -:  383:#else
+        -:  384:    typedef GraphProperty graph_property_type;
+        -:  385:    typedef no_graph_bundle graph_bundled;
+        -:  386:
+        -:  387:    typedef VertexProperty vertex_property_type;
+        -:  388:    typedef no_vertex_bundle vertex_bundled;
+        -:  389:
+        -:  390:    typedef EdgeProperty edge_property_type;
+        -:  391:    typedef no_edge_bundle edge_bundled;
+        -:  392:#endif
+        -:  393:
+        -:  394:  private:
+        -:  395:    typedef adjacency_list self;
+        -:  396:    typedef typename detail::adj_list_gen<
+        -:  397:      self, VertexListS, OutEdgeListS, DirectedS,
+        -:  398:      vertex_property_type, edge_property_type, GraphProperty, EdgeListS
+        -:  399:    >::type Base;
+        -:  400:
+        -:  401:  public:
+        -:  402:    typedef typename Base::stored_vertex stored_vertex;
+        -:  403:    typedef typename Base::vertices_size_type vertices_size_type;
+        -:  404:    typedef typename Base::edges_size_type edges_size_type;
+        -:  405:    typedef typename Base::degree_size_type degree_size_type;
+        -:  406:    typedef typename Base::vertex_descriptor vertex_descriptor;
+        -:  407:    typedef typename Base::edge_descriptor edge_descriptor;
+        -:  408:    typedef OutEdgeListS out_edge_list_selector;
+        -:  409:    typedef VertexListS vertex_list_selector;
+        -:  410:    typedef DirectedS directed_selector;
+        -:  411:    typedef EdgeListS edge_list_selector;
+        -:  412:
+        -:  413:
+function _ZN5boost14adjacency_listINS_4setSENS_4vecSENS_9directedSENS_11no_propertyES4_S4_NS_5listSEEC2ERKS4_ called 136 returned 100% blocks executed 71%
+      136:  414:    adjacency_list(const GraphProperty& p = GraphProperty())
+      136:  415:      : m_property(new graph_property_type(p))
+call    0 returned 100%
+call    1 returned 100%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0% (throw)
+call    4 returned 100%
+call    5 returned 100%
+call    6 never executed
+call    7 never executed
+      136:  416:    { }
+        -:  417:
+        -:  418:    adjacency_list(const adjacency_list& x)
+        -:  419:      : Base(x), m_property(new graph_property_type(*x.m_property))
+        -:  420:    { }
+        -:  421:
+        -:  422:    adjacency_list& operator=(const adjacency_list& x) {
+        -:  423:      // TBD: probably should give the strong guarantee
+        -:  424:      if (&x != this) {
+        -:  425:        Base::operator=(x);
+        -:  426:
+        -:  427:        // Copy/swap the ptr since we can't just assign it...
+        -:  428:        property_ptr p(new graph_property_type(*x.m_property));
+        -:  429:        m_property.swap(p);
+        -:  430:      }
+        -:  431:      return *this;
+        -:  432:    }
+        -:  433:
+        -:  434:    // Required by Mutable Graph
+        -:  435:    adjacency_list(vertices_size_type num_vertices,
+        -:  436:                          const GraphProperty& p = GraphProperty())
+        -:  437:      : Base(num_vertices), m_property(new graph_property_type(p))
+        -:  438:    { }
+        -:  439:
+        -:  440:#if !defined(BOOST_MSVC) || BOOST_MSVC >= 1300
+        -:  441:    // Required by Iterator Constructible Graph
+        -:  442:    template <class EdgeIterator>
+        -:  443:    adjacency_list(EdgeIterator first, EdgeIterator last,
+        -:  444:                          vertices_size_type n,
+        -:  445:                          edges_size_type = 0,
+        -:  446:                          const GraphProperty& p = GraphProperty())
+        -:  447:      : Base(n, first, last), m_property(new graph_property_type(p))
+        -:  448:    { }
+        -:  449:
+        -:  450:    template <class EdgeIterator, class EdgePropertyIterator>
+        -:  451:    adjacency_list(EdgeIterator first, EdgeIterator last,
+        -:  452:                          EdgePropertyIterator ep_iter,
+        -:  453:                          vertices_size_type n,
+        -:  454:                          edges_size_type = 0,
+        -:  455:                          const GraphProperty& p = GraphProperty())
+        -:  456:      : Base(n, first, last, ep_iter), m_property(new graph_property_type(p))
+        -:  457:    { }
+        -:  458:#endif
+        -:  459:
+        -:  460:    void swap(adjacency_list& x) {
+        -:  461:      // Is there a more efficient way to do this?
+        -:  462:      adjacency_list tmp(x);
+        -:  463:      x = *this;
+        -:  464:      *this = tmp;
+        -:  465:    }
+        -:  466:
+        -:  467:    void clear()
+        -:  468:    {
+        -:  469:      this->clearing_graph();
+        -:  470:      Base::clear();
+        -:  471:    }
+        -:  472:
+        -:  473:#ifndef BOOST_GRAPH_NO_BUNDLED_PROPERTIES
+        -:  474:    // Directly access a vertex or edge bundle
+        -:  475:    vertex_bundled& operator[](vertex_descriptor v)
+        -:  476:    { return get(vertex_bundle, *this)[v]; }
+        -:  477:
+        -:  478:    const vertex_bundled& operator[](vertex_descriptor v) const
+        -:  479:    { return get(vertex_bundle, *this)[v]; }
+        -:  480:
+        -:  481:    edge_bundled& operator[](edge_descriptor e)
+        -:  482:    { return get(edge_bundle, *this)[e]; }
+        -:  483:
+        -:  484:    const edge_bundled& operator[](edge_descriptor e) const
+        -:  485:    { return get(edge_bundle, *this)[e]; }
+        -:  486:
+        -:  487:    graph_bundled& operator[](graph_bundle_t)
+        -:  488:    { return get_property(*this); }
+        -:  489:
+        -:  490:    graph_bundled const& operator[](graph_bundle_t) const
+        -:  491:    { return get_property(*this); }
+        -:  492:#endif
+        -:  493:
+        -:  494:    //  protected:  (would be protected if friends were more portable)
+        -:  495:    typedef scoped_ptr<graph_property_type> property_ptr;
+        -:  496:    property_ptr  m_property;
+        -:  497:  };
+        -:  498:
+        -:  499:#define ADJLIST_PARAMS \
+        -:  500:    typename OEL, typename VL, typename D, typename VP, typename EP, \
+        -:  501:    typename GP, typename EL
+        -:  502:#define ADJLIST adjacency_list<OEL,VL,D,VP,EP,GP,EL>
+        -:  503:
+        -:  504:  template<ADJLIST_PARAMS, typename Tag, typename Value>
+        -:  505:  inline void set_property(ADJLIST& g, Tag, Value const& value) {
+        -:  506:    get_property_value(*g.m_property, Tag()) = value;
+        -:  507:  }
+        -:  508:
+        -:  509:  template<ADJLIST_PARAMS, typename Tag>
+        -:  510:  inline typename graph_property<ADJLIST, Tag>::type&
+        -:  511:  get_property(ADJLIST& g, Tag) {
+        -:  512:    return get_property_value(*g.m_property, Tag());
+        -:  513:  }
+        -:  514:
+        -:  515:  template<ADJLIST_PARAMS, typename Tag>
+        -:  516:  inline typename graph_property<ADJLIST, Tag>::type const&
+        -:  517:  get_property(ADJLIST const& g, Tag) {
+        -:  518:    return get_property_value(*g.m_property, Tag());
+        -:  519:  }
+        -:  520:
+        -:  521:  // dwa 09/25/00 - needed to be more explicit so reverse_graph would work.
+        -:  522:  template <class Directed, class Vertex,
+        -:  523:      class OutEdgeListS,
+        -:  524:      class VertexListS,
+        -:  525:      class DirectedS,
+        -:  526:      class VertexProperty,
+        -:  527:      class EdgeProperty,
+        -:  528:      class GraphProperty, class EdgeListS>
+        -:  529:  inline Vertex
+function _ZN5boost6sourceINS_12directed_tagEmNS_4setSENS_4vecSENS_9directedSENS_11no_propertyES5_S5_NS_5listSEEET0_RKNS_6detail9edge_baseIT_S7_EERKNS_14adjacency_listIT1_T2_T3_T4_T5_T6_T7_EE called 40 returned 100% blocks executed 100%
+       40:  530:  source(const detail::edge_base<Directed,Vertex>& e,
+        -:  531:         const adjacency_list<OutEdgeListS, VertexListS, DirectedS,
+        -:  532:                 VertexProperty, EdgeProperty, GraphProperty, EdgeListS>&)
+        -:  533:  {
+       40:  534:    return e.m_source;
+        -:  535:  }
+        -:  536:
+        -:  537:  template <class Directed, class Vertex, class OutEdgeListS,
+        -:  538:      class VertexListS, class DirectedS, class VertexProperty,
+        -:  539:      class EdgeProperty, class GraphProperty, class EdgeListS>
+        -:  540:  inline Vertex
+function _ZN5boost6targetINS_12directed_tagEmNS_4setSENS_4vecSENS_9directedSENS_11no_propertyES5_S5_NS_5listSEEET0_RKNS_6detail9edge_baseIT_S7_EERKNS_14adjacency_listIT1_T2_T3_T4_T5_T6_T7_EE called 72 returned 100% blocks executed 100%
+       72:  541:  target(const detail::edge_base<Directed,Vertex>& e,
+        -:  542:         const adjacency_list<OutEdgeListS, VertexListS, DirectedS,
+        -:  543:              VertexProperty, EdgeProperty, GraphProperty, EdgeListS>&)
+        -:  544:  {
+       72:  545:    return e.m_target;
+        -:  546:  }
+        -:  547:
+        -:  548:  // Support for bundled properties
+        -:  549:#ifndef BOOST_GRAPH_NO_BUNDLED_PROPERTIES
+        -:  550:  template<typename OutEdgeListS, typename VertexListS, typename DirectedS, typename VertexProperty,
+        -:  551:           typename EdgeProperty, typename GraphProperty, typename EdgeListS, typename T, typename Bundle>
+        -:  552:  inline
+        -:  553:  typename property_map<adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  554:                                       GraphProperty, EdgeListS>, T Bundle::*>::type
+        -:  555:  get(T Bundle::* p, adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  556:                                    GraphProperty, EdgeListS>& g)
+        -:  557:  {
+        -:  558:    typedef typename property_map<adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty,
+        -:  559:                                                 EdgeProperty, GraphProperty, EdgeListS>, T Bundle::*>::type
+        -:  560:      result_type;
+        -:  561:    return result_type(&g, p);
+        -:  562:  }
+        -:  563:
+        -:  564:  template<typename OutEdgeListS, typename VertexListS, typename DirectedS, typename VertexProperty,
+        -:  565:           typename EdgeProperty, typename GraphProperty, typename EdgeListS, typename T, typename Bundle>
+        -:  566:  inline
+        -:  567:  typename property_map<adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  568:                                       GraphProperty, EdgeListS>, T Bundle::*>::const_type
+        -:  569:  get(T Bundle::* p, adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  570:                                    GraphProperty, EdgeListS> const & g)
+        -:  571:  {
+        -:  572:    typedef typename property_map<adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty,
+        -:  573:                                                 EdgeProperty, GraphProperty, EdgeListS>, T Bundle::*>::const_type
+        -:  574:      result_type;
+        -:  575:    return result_type(&g, p);
+        -:  576:  }
+        -:  577:
+        -:  578:  template<typename OutEdgeListS, typename VertexListS, typename DirectedS, typename VertexProperty,
+        -:  579:           typename EdgeProperty, typename GraphProperty, typename EdgeListS, typename T, typename Bundle,
+        -:  580:           typename Key>
+        -:  581:  inline T
+        -:  582:  get(T Bundle::* p, adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  583:                                    GraphProperty, EdgeListS> const & g, const Key& key)
+        -:  584:  {
+        -:  585:    return get(get(p, g), key);
+        -:  586:  }
+        -:  587:
+        -:  588:  template<typename OutEdgeListS, typename VertexListS, typename DirectedS, typename VertexProperty,
+        -:  589:           typename EdgeProperty, typename GraphProperty, typename EdgeListS, typename T, typename Bundle,
+        -:  590:           typename Key>
+        -:  591:  inline void
+        -:  592:  put(T Bundle::* p, adjacency_list<OutEdgeListS, VertexListS, DirectedS, VertexProperty, EdgeProperty,
+        -:  593:                                    GraphProperty, EdgeListS>& g, const Key& key, const T& value)
+        -:  594:  {
+        -:  595:    put(get(p, g), key, value);
+        -:  596:  }
+        -:  597:
+        -:  598:#endif
+        -:  599:
+        -:  600:// Mutability Traits
+        -:  601:template <ADJLIST_PARAMS>
+        -:  602:struct graph_mutability_traits<ADJLIST> {
+        -:  603:    typedef mutable_property_graph_tag category;
+        -:  604:};
+        -:  605:
+        -:  606:// Can't remove vertices from adjacency lists with VL==vecS
+        -:  607:template <typename OEL, typename D, typename VP, typename EP, typename GP, typename EL>
+        -:  608:struct graph_mutability_traits< adjacency_list<OEL,vecS,D,VP,EP,GP,EL> > {
+        -:  609:    typedef add_only_property_graph_tag category;
+        -:  610:};
+        -:  611:#undef ADJLIST_PARAMS
+        -:  612:#undef ADJLIST
+        -:  613:
+        -:  614:
+        -:  615:} // namespace boost
+        -:  616:
+        -:  617:
+        -:  618:#endif // BOOST_GRAPH_ADJACENCY_LIST_HPP

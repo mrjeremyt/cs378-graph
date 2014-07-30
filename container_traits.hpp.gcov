@@ -1,0 +1,605 @@
+        -:    0:Source:/usr/include/boost/pending/container_traits.hpp
+        -:    0:Programs:1
+        -:    1://  (C) Copyright Jeremy Siek 2004 
+        -:    2://  (C) Copyright Thomas Claveirole 2010
+        -:    3://  (C) Copyright Ignacy Gawedzki 2010
+        -:    4://  Distributed under the Boost Software License, Version 1.0. (See
+        -:    5://  accompanying file LICENSE_1_0.txt or copy at
+        -:    6://  http://www.boost.org/LICENSE_1_0.txt)
+        -:    7:
+        -:    8:#ifndef BOOST_GRAPH_DETAIL_CONTAINER_TRAITS_H
+        -:    9:#define BOOST_GRAPH_DETAIL_CONTAINER_TRAITS_H
+        -:   10:
+        -:   11:// Sure would be nice to be able to forward declare these
+        -:   12:// instead of pulling in all the headers. Too bad that
+        -:   13:// is not legal. There ought to be a standard <stlfwd> header. -JGS 
+        -:   14:
+        -:   15:#include <boost/next_prior.hpp>
+        -:   16:
+        -:   17:#include <algorithm>   // for std::remove
+        -:   18:#include <vector>
+        -:   19:#include <list>
+        -:   20:#include <map>
+        -:   21:#include <set>
+        -:   22:#include <boost/unordered_set.hpp>
+        -:   23:#include <boost/unordered_map.hpp>
+        -:   24:
+        -:   25:#if !defined BOOST_NO_SLIST
+        -:   26:#  ifdef BOOST_SLIST_HEADER
+        -:   27:#    include BOOST_SLIST_HEADER
+        -:   28:#  else
+        -:   29:#    include <slist>
+        -:   30:#  endif
+        -:   31:#endif
+        -:   32:
+        -:   33:#if BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:   34:// Stay out of the way of concept checking class templates
+        -:   35:# define Container Container_
+        -:   36:# define AssociativeContainer AssociativeContainer_
+        -:   37:#endif
+        -:   38:
+        -:   39:// The content of this file is in 'graph_detail' because otherwise
+        -:   40:// there will be name clashes with 
+        -:   41:// sandbox/boost/sequence_algo/container_traits.hpp
+        -:   42:// The 'detail' subnamespace will still cause problems.
+        -:   43:namespace boost { namespace graph_detail {
+        -:   44:
+        -:   45:  //======================================================================
+        -:   46:  // Container Category Tags
+        -:   47:  //
+        -:   48:  //   They use virtual inheritance because there are lots of
+        -:   49:  //   inheritance diamonds.
+        -:   50:
+function _ZN5boost12graph_detail13container_tagC2Ev called 60292 returned 100% blocks executed 100%
+    60292:   51:  struct container_tag { };
+function _ZN5boost12graph_detail21forward_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+function _ZN5boost12graph_detail21forward_container_tagC2EOS1_ called 60292 returned 100% blocks executed 100%
+   120584:   52:  struct forward_container_tag : virtual public container_tag { };
+function _ZN5boost12graph_detail24reversible_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+    60292:   53:  struct reversible_container_tag : virtual public forward_container_tag { };
+        -:   54:  struct random_access_container_tag
+        -:   55:    : virtual public reversible_container_tag { };
+        -:   56:  
+        -:   57:  struct sequence_tag : virtual public forward_container_tag { };
+        -:   58:
+function _ZN5boost12graph_detail25associative_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+function _ZN5boost12graph_detail25associative_container_tagC1EOS1_ called 68 returned 100% blocks executed 100%
+function _ZN5boost12graph_detail25associative_container_tagC2EOS1_ called 60224 returned 100% blocks executed 100%
+   120584:   59:  struct associative_container_tag : virtual public forward_container_tag { };
+call    0 returned 100%
+        -:   60:
+function _ZN5boost12graph_detail32sorted_associative_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+    60292:   61:  struct sorted_associative_container_tag 
+        -:   62:    : virtual public associative_container_tag,
+        -:   63:      virtual public reversible_container_tag { };
+        -:   64:
+        -:   65:  struct front_insertion_sequence_tag : virtual public sequence_tag { };
+        -:   66:  struct back_insertion_sequence_tag : virtual public sequence_tag { };
+        -:   67:
+function _ZN5boost12graph_detail32unique_associative_container_tagC1EOS1_ called 60224 returned 100% blocks executed 100%
+function _ZN5boost12graph_detail32unique_associative_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+   120516:   68:  struct unique_associative_container_tag 
+call    0 returned 100%
+call    1 returned 100%
+        -:   69:    : virtual public associative_container_tag { };
+        -:   70:  struct multiple_associative_container_tag 
+        -:   71:    : virtual public associative_container_tag { };
+function _ZN5boost12graph_detail32simple_associative_container_tagC2Ev called 60292 returned 100% blocks executed 100%
+    60292:   72:  struct simple_associative_container_tag 
+        -:   73:    : virtual public associative_container_tag { };
+        -:   74:  struct pair_associative_container_tag 
+        -:   75:    : virtual public associative_container_tag { };
+        -:   76:
+        -:   77:
+        -:   78:  //======================================================================
+        -:   79:  // Iterator Stability Tags
+        -:   80:  //
+        -:   81:  // Do mutating operations such as insert/erase/resize invalidate all
+        -:   82:  // outstanding iterators?
+        -:   83:
+        -:   84:  struct stable_tag { };
+        -:   85:  struct unstable_tag { };
+        -:   86:
+        -:   87:  //======================================================================
+        -:   88:  // Container Traits Class and container_category() function
+        -:   89:
+        -:   90:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:   91:  // don't use this unless there is partial specialization 
+        -:   92:  template <class Container>
+        -:   93:  struct container_traits {
+        -:   94:    typedef typename Container::category category;
+        -:   95:    typedef typename Container::iterator_stability iterator_stability;
+        -:   96:  };
+        -:   97:#endif
+        -:   98:
+        -:   99:  // Use this as a compile-time assertion that X is stable
+        -:  100:  inline void require_stable(stable_tag) { }
+        -:  101:
+        -:  102:  // std::vector
+        -:  103:  struct vector_tag :
+        -:  104:    virtual public random_access_container_tag,
+        -:  105:    virtual public back_insertion_sequence_tag { };
+        -:  106:
+        -:  107:  template <class T, class Alloc>
+        -:  108:  vector_tag container_category(const std::vector<T,Alloc>&)
+        -:  109:    { return vector_tag(); }
+        -:  110:
+        -:  111:  template <class T, class Alloc>
+        -:  112:  unstable_tag iterator_stability(const std::vector<T,Alloc>&)
+        -:  113:    { return unstable_tag(); }
+        -:  114:
+        -:  115:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  116:  template <class T, class Alloc>
+        -:  117:  struct container_traits< std::vector<T,Alloc> > {
+        -:  118:    typedef vector_tag category;
+        -:  119:    typedef unstable_tag iterator_stability;
+        -:  120:  };
+        -:  121:#endif
+        -:  122:
+        -:  123:  // std::list
+        -:  124:  struct list_tag :
+        -:  125:    virtual public reversible_container_tag,
+        -:  126:    virtual public back_insertion_sequence_tag
+        -:  127:    // this causes problems for push_dispatch...
+        -:  128:    //    virtual public front_insertion_sequence_tag
+        -:  129:    { };
+        -:  130:
+        -:  131:  template <class T, class Alloc>
+        -:  132:  list_tag container_category(const std::list<T,Alloc>&)
+        -:  133:    { return list_tag(); }
+        -:  134:
+        -:  135:  template <class T, class Alloc>
+        -:  136:  stable_tag iterator_stability(const std::list<T,Alloc>&)
+        -:  137:    { return stable_tag(); }
+        -:  138:
+        -:  139:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  140:  template <class T, class Alloc>
+        -:  141:  struct container_traits< std::list<T,Alloc> > {
+        -:  142:    typedef list_tag category;
+        -:  143:    typedef stable_tag iterator_stability;
+        -:  144:  };
+        -:  145:#endif
+        -:  146:
+        -:  147:
+        -:  148:  // std::slist
+        -:  149:#ifndef BOOST_NO_SLIST
+        -:  150:# ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  151:  template <class T, class Alloc>
+        -:  152:  struct container_traits<BOOST_STD_EXTENSION_NAMESPACE::slist<T,Alloc> > {
+        -:  153:    typedef front_insertion_sequence_tag category;
+        -:  154:    typedef stable_tag iterator_stability;
+        -:  155:  };
+        -:  156:#endif
+        -:  157:  template <class T, class Alloc>
+        -:  158:  front_insertion_sequence_tag container_category(
+        -:  159:  const BOOST_STD_EXTENSION_NAMESPACE::slist<T,Alloc>&
+        -:  160:  )
+        -:  161:    { return front_insertion_sequence_tag(); }
+        -:  162:
+        -:  163:  template <class T, class Alloc>
+        -:  164:  stable_tag iterator_stability(
+        -:  165:  const BOOST_STD_EXTENSION_NAMESPACE::slist<T,Alloc>&)
+        -:  166:    { return stable_tag(); }
+        -:  167:#endif
+        -:  168:
+        -:  169:
+        -:  170:  // std::set
+function _ZN5boost12graph_detail7set_tagC1Ev called 60292 returned 100% blocks executed 100%
+    60292:  171:  struct set_tag :
+call    0 returned 100%
+call    1 returned 100%
+call    2 returned 100%
+call    3 returned 100%
+call    4 returned 100%
+call    5 returned 100%
+call    6 returned 100%
+        -:  172:    virtual public sorted_associative_container_tag,
+        -:  173:    virtual public simple_associative_container_tag,
+        -:  174:    virtual public unique_associative_container_tag 
+        -:  175:    { };
+        -:  176:
+        -:  177:  template <class Key, class Cmp, class Alloc> 
+function _ZN5boost12graph_detail18container_categoryINS_6detail4sep_ImNS_11no_propertyEEESt4lessIS5_ESaIS5_EEENS0_7set_tagERKSt3setIT_T0_T1_E called 60292 returned 100% blocks executed 100%
+    60292:  178:  set_tag container_category(const std::set<Key,Cmp,Alloc>&)
+    60292:  179:  { return set_tag(); }
+call    0 returned 100%
+        -:  180:
+        -:  181:  template <class Key, class Cmp, class Alloc> 
+        -:  182:  stable_tag iterator_stability(const std::set<Key,Cmp,Alloc>&)
+        -:  183:  { return stable_tag(); }
+        -:  184:
+        -:  185:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  186:  template <class Key, class Cmp, class Alloc> 
+        -:  187:  struct container_traits< std::set<Key,Cmp,Alloc> > {
+        -:  188:    typedef set_tag category;
+        -:  189:    typedef stable_tag iterator_stability;
+        -:  190:  };
+        -:  191:#endif
+        -:  192:
+        -:  193:  // std::multiset
+        -:  194:  struct multiset_tag :
+        -:  195:    virtual public sorted_associative_container_tag,
+        -:  196:    virtual public simple_associative_container_tag,
+        -:  197:    virtual public multiple_associative_container_tag 
+        -:  198:    { };
+        -:  199:
+        -:  200:  template <class Key, class Cmp, class Alloc> 
+        -:  201:  multiset_tag container_category(const std::multiset<Key,Cmp,Alloc>&)
+        -:  202:  { return multiset_tag(); }
+        -:  203:
+        -:  204:  template <class Key, class Cmp, class Alloc> 
+        -:  205:  stable_tag iterator_stability(const std::multiset<Key,Cmp,Alloc>&)
+        -:  206:  { return stable_tag(); }
+        -:  207:
+        -:  208:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  209:  template <class Key, class Cmp, class Alloc> 
+        -:  210:  struct container_traits< std::multiset<Key,Cmp,Alloc> > {
+        -:  211:    typedef multiset_tag category;
+        -:  212:    typedef stable_tag iterator_stability;
+        -:  213:  };
+        -:  214:#endif
+        -:  215:
+        -:  216:  // deque
+        -:  217:
+        -:  218:  // std::map
+        -:  219:  struct map_tag :
+        -:  220:    virtual public sorted_associative_container_tag,
+        -:  221:    virtual public pair_associative_container_tag,
+        -:  222:    virtual public unique_associative_container_tag 
+        -:  223:    { };
+        -:  224:
+        -:  225:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  226:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  227:  struct container_traits< std::map<Key,T,Cmp,Alloc> > {
+        -:  228:    typedef map_tag category;
+        -:  229:    typedef stable_tag iterator_stability;
+        -:  230:  };
+        -:  231:#endif
+        -:  232:
+        -:  233:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  234:  map_tag container_category(const std::map<Key,T,Cmp,Alloc>&)
+        -:  235:  { return map_tag(); }
+        -:  236:
+        -:  237:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  238:  stable_tag iterator_stability(const std::map<Key,T,Cmp,Alloc>&)
+        -:  239:  { return stable_tag(); }
+        -:  240:
+        -:  241:  // std::multimap
+        -:  242:  struct multimap_tag :
+        -:  243:    virtual public sorted_associative_container_tag,
+        -:  244:    virtual public pair_associative_container_tag,
+        -:  245:    virtual public multiple_associative_container_tag 
+        -:  246:    { };
+        -:  247:
+        -:  248:#if !defined BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  249:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  250:  struct container_traits< std::multimap<Key,T,Cmp,Alloc> > {
+        -:  251:    typedef multimap_tag category;
+        -:  252:    typedef stable_tag iterator_stability;
+        -:  253:  };
+        -:  254:#endif
+        -:  255:
+        -:  256:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  257:  multimap_tag container_category(const std::multimap<Key,T,Cmp,Alloc>&)
+        -:  258:  { return multimap_tag(); }
+        -:  259:
+        -:  260:  template <class Key, class T, class Cmp, class Alloc> 
+        -:  261:  stable_tag iterator_stability(const std::multimap<Key,T,Cmp,Alloc>&)
+        -:  262:  { return stable_tag(); }
+        -:  263:
+        -:  264:
+        -:  265: // hash_set, hash_map
+        -:  266:
+        -:  267:  struct unordered_set_tag :
+        -:  268:    virtual public simple_associative_container_tag,
+        -:  269:    virtual public unique_associative_container_tag
+        -:  270:    { };
+        -:  271:
+        -:  272:  struct unordered_multiset_tag :
+        -:  273:    virtual public simple_associative_container_tag,
+        -:  274:    virtual public multiple_associative_container_tag
+        -:  275:    { };
+        -:  276:
+        -:  277:
+        -:  278:  struct unordered_map_tag :
+        -:  279:    virtual public pair_associative_container_tag,
+        -:  280:    virtual public unique_associative_container_tag
+        -:  281:    { };
+        -:  282:
+        -:  283:  struct unordered_multimap_tag :
+        -:  284:    virtual public pair_associative_container_tag,
+        -:  285:    virtual public multiple_associative_container_tag
+        -:  286:    { };
+        -:  287:
+        -:  288:
+        -:  289:#ifndef BOOST_NO_HASH
+        -:  290:#ifndef BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION
+        -:  291:  template <class Key, class Eq, class Hash, class Alloc> 
+        -:  292:  struct container_traits< boost::unordered_set<Key,Eq,Hash,Alloc> > {
+        -:  293:    typedef unordered_set_tag category;
+        -:  294:    typedef unstable_tag iterator_stability;
+        -:  295:  };
+        -:  296:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  297:  struct container_traits< boost::unordered_map<Key,T,Eq,Hash,Alloc> > {
+        -:  298:    typedef unordered_map_tag category;
+        -:  299:    typedef unstable_tag iterator_stability;
+        -:  300:  };
+        -:  301:  template <class Key, class Eq, class Hash, class Alloc>
+        -:  302:  struct container_traits< boost::unordered_multiset<Key,Eq,Hash,Alloc> > {
+        -:  303:    typedef unordered_multiset_tag category;
+        -:  304:    typedef unstable_tag iterator_stability;
+        -:  305:  };
+        -:  306:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  307:  struct container_traits< boost::unordered_multimap<Key,T,Eq,Hash,Alloc> > {
+        -:  308:    typedef unordered_multimap_tag category;
+        -:  309:    typedef unstable_tag iterator_stability;
+        -:  310:  };
+        -:  311:#endif
+        -:  312:  template <class Key, class Eq, class Hash, class Alloc>
+        -:  313:  unordered_set_tag
+        -:  314:  container_category(const boost::unordered_set<Key,Eq,Hash,Alloc>&)
+        -:  315:  { return unordered_set_tag(); }
+        -:  316:
+        -:  317:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  318:  unordered_map_tag
+        -:  319:  container_category(const boost::unordered_map<Key,T,Eq,Hash,Alloc>&)
+        -:  320:  { return unordered_map_tag(); }
+        -:  321:
+        -:  322:  template <class Key, class Eq, class Hash, class Alloc>
+        -:  323:  unstable_tag iterator_stability(const boost::unordered_set<Key,Eq,Hash,Alloc>&)
+        -:  324:  { return unstable_tag(); }
+        -:  325:
+        -:  326:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  327:  unstable_tag iterator_stability(const boost::unordered_map<Key,T,Eq,Hash,Alloc>&)
+        -:  328:  { return unstable_tag(); }
+        -:  329:  template <class Key, class Eq, class Hash, class Alloc>
+        -:  330:  unordered_multiset_tag
+        -:  331:  container_category(const boost::unordered_multiset<Key,Eq,Hash,Alloc>&)
+        -:  332:  { return unordered_multiset_tag(); }
+        -:  333:
+        -:  334:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  335:  unordered_multimap_tag
+        -:  336:  container_category(const boost::unordered_multimap<Key,T,Eq,Hash,Alloc>&)
+        -:  337:  { return unordered_multimap_tag(); }
+        -:  338:
+        -:  339:  template <class Key, class Eq, class Hash, class Alloc>
+        -:  340:  unstable_tag
+        -:  341:  iterator_stability(const boost::unordered_multiset<Key,Eq,Hash,Alloc>&)
+        -:  342:  { return unstable_tag(); }
+        -:  343:
+        -:  344:  template <class Key, class T, class Eq, class Hash, class Alloc>
+        -:  345:  unstable_tag
+        -:  346:  iterator_stability(const boost::unordered_multimap<Key,T,Eq,Hash,Alloc>&)
+        -:  347:  { return unstable_tag(); }
+        -:  348:#endif
+        -:  349:
+        -:  350:
+        -:  351:
+        -:  352:  //===========================================================================
+        -:  353:  // Generalized Container Functions
+        -:  354:
+        -:  355:
+        -:  356:  // Erase
+        -:  357:  template <class Sequence, class T>
+        -:  358:  void erase_dispatch(Sequence& c, const T& x, 
+        -:  359:                      sequence_tag)
+        -:  360:  {
+        -:  361:    c.erase(std::remove(c.begin(), c.end(), x), c.end());
+        -:  362:  }
+        -:  363:
+        -:  364:  template <class AssociativeContainer, class T>
+        -:  365:  void erase_dispatch(AssociativeContainer& c, const T& x, 
+        -:  366:                      associative_container_tag)
+        -:  367:  {
+        -:  368:    c.erase(x);
+        -:  369:  }
+        -:  370:  template <class Container, class T>
+        -:  371:  void erase(Container& c, const T& x)
+        -:  372:  {
+        -:  373:    erase_dispatch(c, x, container_category(c));
+        -:  374:  }
+        -:  375:
+        -:  376:  // Erase If
+        -:  377:  template <class Sequence, class Predicate, class IteratorStability>
+        -:  378:  void erase_if_dispatch(Sequence& c, Predicate p,
+        -:  379:                         sequence_tag, IteratorStability)
+        -:  380:  {
+        -:  381:#if 0
+        -:  382:    c.erase(std::remove_if(c.begin(), c.end(), p), c.end());
+        -:  383:#else
+        -:  384:    if (! c.empty())
+        -:  385:      c.erase(std::remove_if(c.begin(), c.end(), p), c.end());
+        -:  386:#endif
+        -:  387:  }
+        -:  388:  template <class AssociativeContainer, class Predicate>
+        -:  389:  void erase_if_dispatch(AssociativeContainer& c, Predicate p,
+        -:  390:                         associative_container_tag, stable_tag)
+        -:  391:  {
+        -:  392:    typename AssociativeContainer::iterator i, next;
+        -:  393:    for (i = next = c.begin(); next != c.end(); i = next) {
+        -:  394:      ++next;
+        -:  395:      if (p(*i))
+        -:  396:        c.erase(i);
+        -:  397:    }
+        -:  398:  }
+        -:  399:  template <class AssociativeContainer, class Predicate>
+        -:  400:  void erase_if_dispatch(AssociativeContainer& c, Predicate p,
+        -:  401:                         associative_container_tag, unstable_tag)
+        -:  402:  {
+        -:  403:    // This method is really slow, so hopefully we won't have any
+        -:  404:    // associative containers with unstable iterators!
+        -:  405:    // Is there a better way to do this?
+        -:  406:    typename AssociativeContainer::iterator i;
+        -:  407:    typename AssociativeContainer::size_type n = c.size();
+        -:  408:    while (n--)
+        -:  409:      for (i = c.begin(); i != c.end(); ++i)
+        -:  410:        if (p(*i)) {
+        -:  411:          c.erase(i);
+        -:  412:          break;
+        -:  413:        }
+        -:  414:  }
+        -:  415:  template <class Container, class Predicate>
+        -:  416:  void erase_if(Container& c, Predicate p)
+        -:  417:  {
+        -:  418:    erase_if_dispatch(c, p, container_category(c), iterator_stability(c));
+        -:  419:  }
+        -:  420:
+        -:  421:  // Push
+        -:  422:  template <class Container, class T>
+        -:  423:  std::pair<typename Container::iterator, bool>
+        -:  424:  push_dispatch(Container& c, const T& v, back_insertion_sequence_tag)
+        -:  425:  {
+        -:  426:    c.push_back(v);
+        -:  427:    return std::make_pair(boost::prior(c.end()), true);
+        -:  428:  }
+        -:  429:
+        -:  430:  template <class Container, class T>
+        -:  431:  std::pair<typename Container::iterator, bool>
+        -:  432:  push_dispatch(Container& c, const T& v, front_insertion_sequence_tag)
+        -:  433:  {
+        -:  434:    c.push_front(v);
+        -:  435:    return std::make_pair(c.begin(), true);
+        -:  436:  }
+        -:  437:
+        -:  438:  template <class AssociativeContainer, class T>
+        -:  439:  std::pair<typename AssociativeContainer::iterator, bool>
+function _ZN5boost12graph_detail13push_dispatchISt3setINS_6detail4sep_ImNS_11no_propertyEEESt4lessIS6_ESaIS6_EES6_EESt4pairINT_8iteratorEbERSC_RKT0_NS0_32unique_associative_container_tagE called 60224 returned 100% blocks executed 100%
+    60224:  440:  push_dispatch(AssociativeContainer& c, const T& v, 
+        -:  441:                unique_associative_container_tag)
+        -:  442:  {
+    60224:  443:    return c.insert(v);
+call    0 returned 100%
+        -:  444:  }
+        -:  445:
+        -:  446:  template <class AssociativeContainer, class T>
+        -:  447:  std::pair<typename AssociativeContainer::iterator, bool>
+        -:  448:  push_dispatch(AssociativeContainer& c, const T& v,
+        -:  449:                multiple_associative_container_tag)
+        -:  450:  {
+        -:  451:    return std::make_pair(c.insert(v), true);
+        -:  452:  }
+        -:  453:
+        -:  454:  template <class Container, class T>
+        -:  455:  std::pair<typename Container::iterator,bool>
+function _ZN5boost12graph_detail4pushISt3setINS_6detail4sep_ImNS_11no_propertyEEESt4lessIS6_ESaIS6_EES6_EESt4pairINT_8iteratorEbERSC_RKT0_ called 60224 returned 100% blocks executed 71%
+    60224:  456:  push(Container& c, const T& v)
+        -:  457:  {
+    60224:  458:    return push_dispatch(c, v, container_category(c));
+call    0 returned 100%
+call    1 returned 100%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0% (throw)
+call    4 returned 100%
+call    5 never executed
+        -:  459:  }
+        -:  460:
+        -:  461:  // Find
+        -:  462:  template <class Container, class Value>
+        -:  463:  typename Container::iterator
+        -:  464:  find_dispatch(Container& c,
+        -:  465:                const Value& value,
+        -:  466:                container_tag)
+        -:  467:  {
+        -:  468:    return std::find(c.begin(), c.end(), value);
+        -:  469:  }
+        -:  470:
+        -:  471:  template <class AssociativeContainer, class Value>
+        -:  472:  typename AssociativeContainer::iterator
+        -:  473:  find_dispatch(AssociativeContainer& c,
+        -:  474:                const Value& value,
+        -:  475:                associative_container_tag)
+        -:  476:  {
+        -:  477:    return c.find(value);
+        -:  478:  }
+        -:  479:
+        -:  480:  template <class Container, class Value>
+        -:  481:  typename Container::iterator
+        -:  482:  find(Container& c,
+        -:  483:       const Value& value)
+        -:  484:  {
+        -:  485:    return find_dispatch(c, value,
+        -:  486:                         graph_detail::container_category(c));
+        -:  487:  }
+        -:  488:
+        -:  489:  // Find (const versions)
+        -:  490:  template <class Container, class Value>
+        -:  491:  typename Container::const_iterator
+        -:  492:  find_dispatch(const Container& c,
+        -:  493:                const Value& value,
+        -:  494:                container_tag)
+        -:  495:  {
+        -:  496:    return std::find(c.begin(), c.end(), value);
+        -:  497:  }
+        -:  498:
+        -:  499:  template <class AssociativeContainer, class Value>
+        -:  500:  typename AssociativeContainer::const_iterator
+function _ZN5boost12graph_detail13find_dispatchISt3setINS_6detail4sep_ImNS_11no_propertyEEESt4lessIS6_ESaIS6_EES6_EENT_14const_iteratorERKSB_RKT0_NS0_25associative_container_tagE called 68 returned 100% blocks executed 100%
+       68:  501:  find_dispatch(const AssociativeContainer& c,
+        -:  502:                const Value& value,
+        -:  503:                associative_container_tag)
+        -:  504:  {
+       68:  505:    return c.find(value);
+call    0 returned 100%
+        -:  506:  }
+        -:  507:
+        -:  508:  template <class Container, class Value>
+        -:  509:  typename Container::const_iterator
+function _ZN5boost12graph_detail4findISt3setINS_6detail4sep_ImNS_11no_propertyEEESt4lessIS6_ESaIS6_EES6_EENT_14const_iteratorERKSB_RKT0_ called 68 returned 100% blocks executed 71%
+       68:  510:  find(const Container& c,
+        -:  511:       const Value& value)
+        -:  512:  {
+        -:  513:    return find_dispatch(c, value,
+       68:  514:                         graph_detail::container_category(c));
+call    0 returned 100%
+call    1 returned 100%
+branch  2 taken 100% (fallthrough)
+branch  3 taken 0% (throw)
+call    4 returned 100%
+call    5 never executed
+        -:  515:  }
+        -:  516:
+        -:  517:  // Equal range
+        -:  518:#if 0
+        -:  519:  // Make the dispatch fail if c is not an Associative Container (and thus
+        -:  520:  // doesn't have equal_range unless it is sorted, which we cannot check
+        -:  521:  // statically and is not typically true for BGL's uses of this function).
+        -:  522:  template <class Container,
+        -:  523:            class LessThanComparable>
+        -:  524:  std::pair<typename Container::iterator, typename Container::iterator>
+        -:  525:  equal_range_dispatch(Container& c,
+        -:  526:                       const LessThanComparable& value,
+        -:  527:                       container_tag)
+        -:  528:  {
+        -:  529:    // c must be sorted for std::equal_range to behave properly.
+        -:  530:    return std::equal_range(c.begin(), c.end(), value);
+        -:  531:  }
+        -:  532:#endif
+        -:  533:
+        -:  534:  template <class AssociativeContainer, class Value>
+        -:  535:  std::pair<typename AssociativeContainer::iterator,
+        -:  536:            typename AssociativeContainer::iterator>
+        -:  537:  equal_range_dispatch(AssociativeContainer& c,
+        -:  538:                       const Value& value,
+        -:  539:                       associative_container_tag)
+        -:  540:  {
+        -:  541:    return c.equal_range(value);
+        -:  542:  }
+        -:  543:
+        -:  544:  template <class Container, class Value>
+        -:  545:  std::pair<typename Container::iterator, typename Container::iterator>
+        -:  546:  equal_range(Container& c,
+        -:  547:              const Value& value)
+        -:  548:  {
+        -:  549:    return equal_range_dispatch(c, value,
+        -:  550:                                graph_detail::container_category(c));
+        -:  551:  }
+        -:  552:
+        -:  553:}} // namespace boost::graph_detail
+        -:  554:
+        -:  555:#if BOOST_WORKAROUND(BOOST_MSVC, < 1300)
+        -:  556:// Stay out of the way of concept checking class templates
+        -:  557:# undef Container
+        -:  558:# undef AssociativeContainer
+        -:  559:#endif
+        -:  560:
+        -:  561:#endif // BOOST_GRAPH_DETAIL_CONTAINER_TRAITS_H

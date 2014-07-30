@@ -1,0 +1,72 @@
+        -:    0:Source:/usr/include/boost/smart_ptr/bad_weak_ptr.hpp
+        -:    0:Programs:1
+        -:    1:#ifndef BOOST_SMART_PTR_BAD_WEAK_PTR_HPP_INCLUDED
+        -:    2:#define BOOST_SMART_PTR_BAD_WEAK_PTR_HPP_INCLUDED
+        -:    3:
+        -:    4:// MS compatible compilers support #pragma once
+        -:    5:
+        -:    6:#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+        -:    7:# pragma once
+        -:    8:#endif
+        -:    9:
+        -:   10://
+        -:   11://  boost/smart_ptr/bad_weak_ptr.hpp
+        -:   12://
+        -:   13://  Copyright (c) 2001, 2002, 2003 Peter Dimov and Multi Media Ltd.
+        -:   14://
+        -:   15:// Distributed under the Boost Software License, Version 1.0. (See
+        -:   16:// accompanying file LICENSE_1_0.txt or copy at
+        -:   17:// http://www.boost.org/LICENSE_1_0.txt)
+        -:   18://
+        -:   19:
+        -:   20:#include <exception>
+        -:   21:
+        -:   22:#ifdef __BORLANDC__
+        -:   23:# pragma warn -8026     // Functions with excep. spec. are not expanded inline
+        -:   24:#endif
+        -:   25:
+        -:   26:namespace boost
+        -:   27:{
+        -:   28:
+        -:   29:// The standard library that comes with Borland C++ 5.5.1, 5.6.4
+        -:   30:// defines std::exception and its members as having C calling
+        -:   31:// convention (-pc). When the definition of bad_weak_ptr
+        -:   32:// is compiled with -ps, the compiler issues an error.
+        -:   33:// Hence, the temporary #pragma option -pc below.
+        -:   34:
+        -:   35:#if defined(__BORLANDC__) && __BORLANDC__ <= 0x564
+        -:   36:# pragma option push -pc
+        -:   37:#endif
+        -:   38:
+function _ZN5boost12bad_weak_ptrD0Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost12bad_weak_ptrD2Ev called 0 returned 0% blocks executed 0%
+function _ZN5boost12bad_weak_ptrC2ERKS0_ called 0 returned 0% blocks executed 0%
+    #####:   39:class bad_weak_ptr: public std::exception
+call    0 never executed
+call    1 never executed
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+call    5 never executed
+call    6 never executed
+        -:   40:{
+        -:   41:public:
+        -:   42:
+function _ZNK5boost12bad_weak_ptr4whatEv called 0 returned 0% blocks executed 0%
+    #####:   43:    virtual char const * what() const throw()
+        -:   44:    {
+    #####:   45:        return "tr1::bad_weak_ptr";
+        -:   46:    }
+        -:   47:};
+        -:   48:
+        -:   49:#if defined(__BORLANDC__) && __BORLANDC__ <= 0x564
+        -:   50:# pragma option pop
+        -:   51:#endif
+        -:   52:
+        -:   53:} // namespace boost
+        -:   54:
+        -:   55:#ifdef __BORLANDC__
+        -:   56:# pragma warn .8026     // Functions with excep. spec. are not expanded inline
+        -:   57:#endif
+        -:   58:
+        -:   59:#endif  // #ifndef BOOST_SMART_PTR_BAD_WEAK_PTR_HPP_INCLUDED
