@@ -192,7 +192,10 @@ class Graph {
         // --------
 
         /**
-         * <your documentation>
+         * @param a vertex_descriptor to the first vertex
+         * @param b vertex_descriptor to the second vertex
+         * @param g the graph for which to add the edge
+         * @return returns a pair of an edge_descriptor and a boolean for successful or not
          */
         friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor a, vertex_descriptor b, Graph& g) {
             edge_descriptor e(a, b);
@@ -205,7 +208,8 @@ class Graph {
         // ----------
 
         /**
-         * <your documentation>
+         * @param g graph for which to add the vertex
+         * @return returns the vertex_descriptor for the new vertex
          */
         friend vertex_descriptor add_vertex (Graph& g) {
             g._g.push_back(set<edge_descriptor>());
@@ -217,7 +221,9 @@ class Graph {
         // -----------------
 
         /**
-         * <your documentation>
+         * @param v vertex_descriptor for which you want the adjacent vertices of
+         * @param g the graph for which to get the adjacent vertices from
+         * @return returns a pair of adjacency iterators for the beginning and end
          */
         friend std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices (vertex_descriptor v, Graph& g) {
             adjacency_iterator b(&g, g._g[v].begin());
@@ -230,7 +236,10 @@ class Graph {
         // ----
 
         /**
-         * <your documentation>
+         * @param a vertex_descriptor of the main vertex
+         * @param b vertex_descriptor of the secondary vertex
+         * @param g graph for which to get the edge from 
+         * @return returns a pair of an edge_descriptor and a boolean
          */
         friend std::pair<edge_descriptor, bool> edge (vertex_descriptor a, vertex_descriptor b, const Graph& g) {
             edge_descriptor e(a, b);
@@ -242,7 +251,8 @@ class Graph {
         // -----
 
         /**
-         * <your documentation>
+         * @param g the graph for which to get the iterator over edges from 
+         * @return returns a pair of edge_iterators for the beginning and the end
          */
         friend std::pair<edge_iterator, edge_iterator> edges (Graph& g) {
             unsigned int i = 0;
@@ -256,7 +266,8 @@ class Graph {
         // ---------
 
         /**
-         * <your documentation>
+         * @param g the graph for which to get the number of edges from 
+         * @return returns the number of edges in the graph
          */
         friend edges_size_type num_edges (const Graph& g) {
             return g._numEdges;}
@@ -266,7 +277,8 @@ class Graph {
         // ------------
 
         /**
-         * <your documentation>
+         * @param g the graph for which to get the number of vertices from 
+         * @return returns the number of vertices in the graph
          */
         friend vertices_size_type num_vertices (const Graph& g) {
             return g._g.size();}
@@ -276,7 +288,9 @@ class Graph {
         // ------
 
         /**
-         * <your documentation>
+         * @param e edge_descriptor from which to get the source
+         * @param g the graph for which to get the source from
+         * @return returns the main vertex in an edge
          */
         friend vertex_descriptor source (edge_descriptor e, const Graph& g) {
             return e.first;}
@@ -286,7 +300,9 @@ class Graph {
         // ------
 
         /**
-         * <your documentation>
+         * @param e edge_descriptor from which to get the target
+         * @param g the graph for which to get the target from 
+         * @return returns the secondary vertex in an edge
          */
         friend vertex_descriptor target (edge_descriptor e, const Graph& g) {
             return e.second;}
@@ -296,7 +312,9 @@ class Graph {
         // ------
 
         /**
-         * <your documentation>
+         * @param i index of the graph to get the vertex_descriptor from 
+         * @param g graph from which to get the vertex_descriptor from 
+         * @return returns the vertex_descriptor at index i
          */
         friend vertex_descriptor vertex (vertices_size_type i, const Graph& g) {
             return i;}
@@ -306,7 +324,8 @@ class Graph {
         // --------
 
         /**
-         * <your documentation>
+         * @param g graph form which to get the vertex iterators from 
+         * @return returns a pair of vertex iterators which are the beginning and the end of the graph's vertices
          */
         friend std::pair<vertex_iterator, vertex_iterator> vertices (Graph& g) {
             return make_pair(vertex_iterator(&g, 0), vertex_iterator(&g, g._g.size()));}
@@ -323,11 +342,10 @@ class Graph {
         // -----
 
         /**
-         * <your documentation>
+         * @return returns a boolean stating whether the condition is valid. This is when the graph is empty
          */
         bool valid () const {
-            // <your code>
-            return true;}
+            return _g.size() == 0 && _numEdges == 0;}
 
     public:
 
@@ -336,7 +354,7 @@ class Graph {
         // ------------
 
         /**
-         * <your documentation>
+         * initializes the graph and calls valid to ensure this
          */
         Graph () : _g(), _numEdges() {
             assert(valid());}
