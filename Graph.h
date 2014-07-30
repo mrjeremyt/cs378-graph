@@ -7,7 +7,7 @@
 #ifndef Graph_h
 #define Graph_h
 
-using namespace std;
+
 
 // --------
 // includes
@@ -18,7 +18,12 @@ using namespace std;
 #include <utility> // make_pair, pair
 #include <vector>  // vector
 #include <algorithm>
+#include <iterator>
 #include <set>
+#include <iostream> // cout, endl
+
+using namespace std;
+using std::rel_ops::operator!=;
 
 // -----
 // Graph
@@ -30,15 +35,202 @@ class Graph {
         // typedefs
         // --------
 
-        typedef int vertex_descriptor;  // fix!
-        typedef int edge_descriptor;    // fix!
+        typedef int vertex_descriptor;
+        typedef pair<vertex_descriptor, vertex_descriptor> edge_descriptor;
 
-        typedef int* vertex_iterator;    // fix!
-        typedef int* edge_iterator;      // fix!
-        typedef int* adjacency_iterator; // fix!
 
         typedef std::size_t vertices_size_type;
         typedef std::size_t edges_size_type;
+        typedef set<edge_descriptor> edge_set;
+
+         // ------------
+        // vertex_iterator class
+        // ------------
+        class vertex_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
+        {
+            public:
+                friend bool operator == (const vertex_iterator& rhs, const vertex_iterator& lhs) {
+                    return (rhs._g == lhs._g) && (rhs._i == lhs._i);
+                }
+                friend bool operator < (const vertex_iterator& rhs, const vertex_iterator& lhs) {
+                    return (rhs._g == lhs._g) && (rhs._i < lhs._i);
+                }
+            private:
+                Graph* _g;
+                vertex_descriptor _i;
+            public:
+                vertex_iterator(Graph* g, const vertex_descriptor& i) :
+                    _g(g),
+                    _i(i)
+                    {}
+
+                const vertex_descriptor& operator * () {
+                    return _i;
+                }
+                vertex_iterator& operator ++ () {
+                    ++_i;
+                    return *this;
+                }
+                vertex_iterator operator ++ (int) {
+                    vertex_iterator temp = *this;
+                    ++_i;
+                    return temp;
+                }
+                vertex_iterator& operator -- () {
+                    --_i;
+                    return *this;
+                }
+                vertex_iterator operator -- (int) {
+                    vertex_iterator temp = *this;
+                    --_i;
+                    return temp;
+                }
+
+        };
+
+        // ------------
+        // adjacency_iterator class
+        // ------------
+        class adjacency_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
+        {
+            public:
+                friend bool operator == (const adjacency_iterator& rhs, const adjacency_iterator& lhs) {
+                    return (rhs._g == lhs._g) && (rhs._i == lhs._i);
+                }
+            private:
+                Graph* _g;
+                edge_set::iterator _i;
+            public:
+                adjacency_iterator(Graph* g, const edge_set::iterator& i) :
+                    _g(g),
+                    _i(i)
+                    {}
+
+                const vertex_descriptor& operator * () {
+                    return (*_i).second;
+                }
+                adjacency_iterator& operator ++ () {
+                    ++_i;
+                    return *this;
+                }
+                adjacency_iterator operator ++ (int) {
+                    adjacency_iterator temp = *this;
+                    ++_i;
+                    return temp;
+                }
+                adjacency_iterator& operator -- () {
+                    --_i;
+                    return *this;
+                }
+                adjacency_iterator operator -- (int) {
+                    adjacency_iterator temp = *this;
+                    --_i;
+                    return temp;
+                }
+
+        };
+
+        // ------------
+        // edge_iterator class
+        // ------------
+        class edge_iterator : public iterator<bidirectional_iterator_tag, edge_descriptor>
+        {
+            public:
+                friend bool operator == (const edge_iterator& rhs, const edge_iterator& lhs) {
+                    return (rhs._g == lhs._g) && (rhs._i == lhs._i) && (rhs._e == lhs._e);
+                }
+            private:
+
+                void next() {
+                    if((unsigned int)_i >= _g->_g.size()) {
+                        _e = _g->_g[_g->_g.size()-1].end();
+                    }
+                    else if((_e != _g->_g[_i].end())) {
+                        ++_e;
+                        if((_e == _g->_g[_i].end()))
+                            next();
+                    }
+                    else{
+                        ++_i;
+                        _e = _g->_g[_i].begin();
+                        if(_g->_g[_i].empty())
+                            next();
+                    }
+
+                }
+
+                // void next() {
+                //     cout << "Next: _i = " << _i << "(" << (*_e).first << ", " << (*_e).second << ")\n";
+                //     edge_set::iterator end = _g->_g[_i].end();
+                //     cout << "end-1 = (" << (*(prev(end))).first << ", " << (*(prev(end))).second << ")\n";
+                //     if(_g->_g[_i].size() > 1 || _e != end) {
+                //         cout << "_e != end:\n";
+                //         _e++;
+                //          cout << "1here!\n" << flush;
+                //     }
+                //     //cout << "end-1 = (" << (*(prev(end))).first << ", " << (*(prev(end))).second << ")\n";
+                //     cout << "2here!\n" << flush;
+                //     if(_g->_g[_i].size() <= 1 || _e == end) {
+                //         cout << "_e == end:\n";
+                //         ++_i;
+                //         for(;(unsigned int) _i < _g->_g.size(); ++_i) {
+                //             cout << "_i: " << _i << "\n";
+                //             edge_set row = _g->_g[_i];
+                //             if(!row.empty()) {
+                //                 _e = row.begin();
+                //                 cout << "Row found! (" << (*_e).first << ", " << (*_e).second << ")\n";
+                //                 return;
+                //             }
+                //         }
+                //         _e = _g->_g[_i-1].end();
+                //     }
+
+                //     cout << "val = (" << (*_e).first << ", " << (*_e).second << ")\n";
+
+                // }
+                // void prev() {
+                //     edge_set::iteartor begin = _g->_g[_i].begin();
+                //     while(_e == begin && _i < _g->_g.size()) {
+                //         ++_i;
+                //         _e = _g->_g[i].begin();
+                //         end = _g->_g[i].end();
+                //     }
+
+                // }
+
+                Graph* _g;
+                vertex_descriptor _i;
+                edge_set::iterator _e;
+            public:
+                edge_iterator(Graph* g, const vertex_descriptor& i, const edge_set::iterator& e) :
+                    _g(g),
+                    _i(i),
+                    _e(e)
+                    {}
+
+                const edge_descriptor& operator * () {
+                    return *_e;
+                }
+                edge_iterator& operator ++ () {
+                    next();
+                    return *this;
+                }
+                edge_iterator operator ++ (int) {
+                    edge_iterator temp = *this;
+                    next();
+                    return temp;
+                }
+                edge_iterator& operator -- () {
+                    next();
+                    return *this;
+                }
+                edge_iterator operator -- (int) {
+                    edge_iterator temp = *this;
+                    next();
+                    return temp;
+                }
+
+        };
 
     public:
         // --------
@@ -49,9 +241,9 @@ class Graph {
          * <your documentation>
          */
         friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor a, vertex_descriptor b, Graph& g) {
-            //auto f = find(g._g[a].begin(), g._g[a].end(), a);
-            if(g._g[a].find(b) == g._g[a].end()){  g._g[a].insert(b); ++g._numEdges; return make_pair(b, true); }
-            else return make_pair(b, false);
+            edge_descriptor e(a, b);
+            if(g._g[a].find(e) == g._g[a].end()){  g._g[a].insert(e); ++g._numEdges; return make_pair(e, true); }
+            else return make_pair(e, false);
         }
 
         // ----------
@@ -72,11 +264,9 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices (vertex_descriptor, const Graph&) {
-            // <your code>
-            static int a [] = {0, 0};     // dummy data
-            adjacency_iterator b = a;
-            adjacency_iterator e = a + 2;
+        friend std::pair<adjacency_iterator, adjacency_iterator> adjacent_vertices (vertex_descriptor v, Graph& g) {
+            adjacency_iterator b(&g, g._g[v].begin());
+            adjacency_iterator e(&g, g._g[v].end());
             return std::make_pair(b, e);}
 
         // ----
@@ -87,9 +277,8 @@ class Graph {
          * <your documentation>
          */
         friend std::pair<edge_descriptor, bool> edge (vertex_descriptor a, vertex_descriptor b, const Graph& g) {
-            auto f = find(g._g[a].begin(), g._g[a].end(), b);
-            if(f == g._g[a].end()) return make_pair(b, false);
-            else return make_pair(b, true);
+            edge_descriptor e(a, b);
+            return make_pair(e, g._g[a].find(e) != g._g[a].end());
 
         }
 
@@ -100,11 +289,16 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend std::pair<edge_iterator, edge_iterator> edges (const Graph&) {
+        friend std::pair<edge_iterator, edge_iterator> edges (Graph& g) {
             // <your code>
-            static int a [] = {0, 0};     // dummy data
-            edge_iterator b = a;
-            edge_iterator e = a + 2;
+
+            
+            unsigned int i = 0;
+            while(g._g[i].empty() && i < g._g.size()) {
+                i++;
+            }
+            edge_iterator b(&g, i, g._g[i].begin());
+            edge_iterator e(&g, g._g.size(), g._g[g._g.size()-1].end());
             return std::make_pair(b, e);}
 
         // ---------
@@ -134,10 +328,8 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend vertex_descriptor source (edge_descriptor, const Graph&) {
-            // <your code>
-            vertex_descriptor v = 0; // fix
-            return v;}
+        friend vertex_descriptor source (edge_descriptor e, const Graph& g) {
+            return e.first;}
 
         // ------
         // target
@@ -146,10 +338,8 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend vertex_descriptor target (edge_descriptor, const Graph&) {
-            // <your code>
-            vertex_descriptor v = 0; // fix
-            return v;}
+        friend vertex_descriptor target (edge_descriptor e, const Graph& g) {
+            return e.second;}
 
         // ------
         // vertex
@@ -168,19 +358,15 @@ class Graph {
         /**
          * <your documentation>
          */
-        friend std::pair<vertex_iterator, vertex_iterator> vertices (const Graph&) {
-            // <your code>
-            static int a [] = {0, 0};     // dummy data
-            vertex_iterator b = a;
-            vertex_iterator e = a + 2;
-            return std::make_pair(b, e);}
+        friend std::pair<vertex_iterator, vertex_iterator> vertices (Graph& g) {
+            return make_pair(vertex_iterator(&g, 0), vertex_iterator(&g, g._g.size()));}
 
     private:
         // ----
         // data
         // ----
 
-        vector< set<edge_descriptor> > _g; // something like this
+        vector< edge_set > _g; // something like this
         edges_size_type _numEdges;
         // -----
         // valid
@@ -194,6 +380,7 @@ class Graph {
             return true;}
 
     public:
+
         // ------------
         // constructors
         // ------------

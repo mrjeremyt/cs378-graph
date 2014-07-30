@@ -103,7 +103,8 @@ struct TestGraph : testing::Test {
 // possibly connected
 // possibly cyclic
 typedef testing::Types<
-            boost::adjacency_list<boost::setS, boost::vecS, boost::directedS> >
+            boost::adjacency_list<boost::setS, boost::vecS, boost::directedS>,
+            Graph>
             my_types;
 
 TYPED_TEST_CASE(TestGraph, my_types);
