@@ -49,6 +49,12 @@ class Graph {
         class vertex_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
         {
             public:
+                /**
+                 * Checks if two vertex_iterators are equal.
+                 * @param rhs first vertex_iterator
+                 * @param lhs second vertex_iterator
+                 * @return true if equal, false if not
+                 */
                 friend bool operator == (const vertex_iterator& rhs, const vertex_iterator& lhs) {
                     return (rhs._g == lhs._g) && (rhs._i == lhs._i);
                 }
@@ -56,27 +62,51 @@ class Graph {
                 Graph* _g;
                 vertex_descriptor _i;
             public:
+                /**
+                 * Constructor for vertex_iteator
+                 * @param g pointer to graph being itearted on.
+                 * @param i vertex position to start at.
+                 */
                 vertex_iterator(Graph* g, const vertex_descriptor& i) :
                     _g(g),
                     _i(i)
                     {}
-
+                /**
+                 * Dereferences vertex_iterator
+                 * @return const reference to vertex
+                 */
                 const vertex_descriptor& operator * () {
                     return _i;
                 }
+                /**
+                 * Pre-increment on iterator.
+                 * @return reference to self (*this)
+                 */
                 vertex_iterator& operator ++ () {
                     ++_i;
                     return *this;
                 }
+                /**
+                 * Post-increment on iterator.
+                 * @return copy of this iterator before increment
+                 */
                 vertex_iterator operator ++ (int) {
                     vertex_iterator temp = *this;
                     ++_i;
                     return temp;
                 }
+                /**
+                 * Pre-decrement on iterator.
+                 * @return reference to self (*this)
+                 */
                 vertex_iterator& operator -- () {
                     --_i;
                     return *this;
                 }
+                /**
+                 * Post-decrement on iterator.
+                 * @return copy of this iterator before decrement
+                 */
                 vertex_iterator operator -- (int) {
                     vertex_iterator temp = *this;
                     --_i;
@@ -91,6 +121,12 @@ class Graph {
         class adjacency_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
         {
             public:
+                /**
+                 * Checks if two adjacency_iterators are equal.
+                 * @param rhs first adjacency_iterator
+                 * @param lhs second adjacency_iterator
+                 * @return true if equal, false if not
+                 */
                 friend bool operator == (const adjacency_iterator& rhs, const adjacency_iterator& lhs) {
                     return (rhs._g == lhs._g) && (rhs._i == lhs._i);
                 }
@@ -98,27 +134,51 @@ class Graph {
                 Graph* _g;
                 edge_set::iterator _i;
             public:
+                /**
+                 * Constructor for adjacency_iterator
+                 * @param g pointer to graph being itearted on.
+                 * @param i an edge_set iterator pointing to set of edges for this vertex
+                 */
                 adjacency_iterator(Graph* g, const edge_set::iterator& i) :
                     _g(g),
                     _i(i)
                     {}
-
+                /**
+                 * Dereferences adjacency_iterator
+                 * @return const reference to a vertex adjacent to this vertex
+                 */
                 const vertex_descriptor& operator * () {
                     return (*_i).second;
                 }
+                /**
+                 * Pre-increment on iterator.
+                 * @return reference to self (*this)
+                 */
                 adjacency_iterator& operator ++ () {
                     ++_i;
                     return *this;
                 }
+                /**
+                 * Post-increment on iterator.
+                 * @return copy of this iterator before increment
+                 */
                 adjacency_iterator operator ++ (int) {
                     adjacency_iterator temp = *this;
                     ++_i;
                     return temp;
                 }
+                /**
+                 * Pre-decrement on iterator.
+                 * @return reference to self (*this)
+                 */
                 adjacency_iterator& operator -- () {
                     --_i;
                     return *this;
                 }
+                /**
+                 * Post-decrement on iterator.
+                 * @return copy of this iterator before decrement
+                 */
                 adjacency_iterator operator -- (int) {
                     adjacency_iterator temp = *this;
                     --_i;
@@ -133,11 +193,20 @@ class Graph {
         class edge_iterator : public iterator<bidirectional_iterator_tag, edge_descriptor>
         {
             public:
+                /**
+                 * Checks if two edge_iterators are equal.
+                 * @param rhs first edge_iterator
+                 * @param lhs second edge_iterator
+                 * @return true if equal, false if not
+                 */
                 friend bool operator == (const edge_iterator& rhs, const edge_iterator& lhs) {
                     return (rhs._g == lhs._g) && (rhs._i == lhs._i) && (rhs._e == lhs._e);
                 }
             private:
-
+                /**
+                 * moves the state of the iterator forward.  Used by post and pre-increment
+                 * @return void
+                 */
                 void next() {
                     if((unsigned int)_i >= _g->_g.size()) {
                         _e = _g->_g[_g->_g.size()-1].end();
@@ -156,28 +225,53 @@ class Graph {
                 vertex_descriptor _i;
                 edge_set::iterator _e;
             public:
+                 /**
+                 * Constructor for edge_iterator
+                 * @param g pointer to graph being itearted on.
+                 * @param i the starting vertex.
+                 * @param e starting edge to begin iteration on.
+                 */
                 edge_iterator(Graph* g, const vertex_descriptor& i, const edge_set::iterator& e) :
                     _g(g),
                     _i(i),
                     _e(e)
                     {}
-
+                /**
+                 * Dereferences edge_iterator
+                 * @return const reference to an edge_descriptor
+                 */
                 const edge_descriptor& operator * () {
                     return *_e;
                 }
+                /**
+                 * Pre-increment on iterator.
+                 * @return reference to self (*this)
+                 */
                 edge_iterator& operator ++ () {
                     next();
                     return *this;
                 }
+                /**
+                 * Post-increment on iterator.
+                 * @return copy of this iterator before increment
+                 */
                 edge_iterator operator ++ (int) {
                     edge_iterator temp = *this;
                     next();
                     return temp;
                 }
+                /**
+                 * Pre-decrement on iterator.
+                 * @return reference to self (*this)
+                 */
                 edge_iterator& operator -- () {
                     next();
                     return *this;
                 }
+                /**
+                 * Post-decrement on iterator.
+                 * @return copy of this iterator before decrement
+                 */
                 edge_iterator operator -- (int) {
                     edge_iterator temp = *this;
                     next();
