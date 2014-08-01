@@ -629,6 +629,55 @@ TYPED_TEST(TestGraph, Edges_3) {
     ASSERT_EQ(e, b);
 
 }
+// Boost graph does not allow decrement on edge iterators
+// TYPED_TEST(TestGraph, Edges_4) {
+//  ALL_TYPEDEF
+
+//     graph_type g;
+
+//     vertex_descriptor vdA = add_vertex(g);
+//     vertex_descriptor vdB = add_vertex(g);
+//     vertex_descriptor vdC = add_vertex(g);
+//     vertex_descriptor vdE = add_vertex(g);
+
+//     edge_descriptor edAB = add_edge(vdA, vdB, g).first;
+//     edge_descriptor edAA = add_edge(vdA, vdA, g).first;
+//     edge_descriptor edAC = add_edge(vdA, vdC, g).first;
+//     edge_descriptor edBA = add_edge(vdB, vdA, g).first;
+//     edge_descriptor edCB = add_edge(vdC, vdB, g).first;
+//     edge_descriptor edEA = add_edge(vdE, vdA, g).first;
+
+//     std::pair<edge_iterator, edge_iterator> p = edges(g);
+//     edge_iterator                           b = p.first;
+//     edge_iterator                           e = p.second;
+//     e--;
+
+//     if (b != e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edEA, ed);}
+//     --e;
+//     if (b != e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edCB, ed);}
+//     --e;
+//     if (b != e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edBA, ed);}
+//     --e;
+//     if (b != e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edAC, ed);}
+//     --e;
+//     if (b != e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edAB, ed);}
+//     --e;
+//     if (b == e) {
+//         edge_descriptor ed = *e;
+//         ASSERT_EQ(edAA, ed);}
+//     ASSERT_EQ(e, b);
+
+// }
 
 TYPED_TEST(TestGraph, Source_1){
     ALL_TYPEDEF

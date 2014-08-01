@@ -225,6 +225,16 @@ class Graph {
                     }
                 }
 
+                void prev() {
+                    if((_e != _g->_g[_i].begin())) {
+                        --_e;
+                    }else{
+                        --_i;
+                        _e = _g->_g[_i].end();
+                        prev();
+                    }
+                }
+
 
                 Graph* _g;
                 vertex_descriptor _i;
@@ -274,7 +284,7 @@ class Graph {
                  * @return reference to self (*this)
                  */
                 edge_iterator& operator -- () {
-                    next();
+                    prev();
                     return *this;
                 }
                 /**
@@ -283,7 +293,7 @@ class Graph {
                  */
                 edge_iterator operator -- (int) {
                     edge_iterator temp = *this;
-                    next();
+                    prev();
                     return temp;
                 }
 
