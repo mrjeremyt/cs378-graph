@@ -25,6 +25,11 @@
 using namespace std;
 using std::rel_ops::operator!=;
 
+
+ostream& operator << (ostream& lhs, const pair<int, int>& rhs){
+    return lhs << "(" << rhs.first << "," << rhs.second << ")"; }
+    
+
 // -----
 // Graph
 // -----
@@ -44,8 +49,6 @@ class Graph {
         typedef set<edge_descriptor> edge_set;
 
 
-        friend ostream& operator << (ostream& lhs, const edge_descriptor& rhs){
-            return lhs << "(" << rhs.first << "," << rhs.second << ")"; }
 
 
          // ------------
@@ -225,16 +228,6 @@ class Graph {
                     }
                 }
 
-                void prev() {
-                    if((_e != _g->_g[_i].begin())) {
-                        --_e;
-                    }else{
-                        --_i;
-                        _e = _g->_g[_i].end();
-                        prev();
-                    }
-                }
-
 
                 Graph* _g;
                 vertex_descriptor _i;
@@ -284,7 +277,7 @@ class Graph {
                  * @return reference to self (*this)
                  */
                 edge_iterator& operator -- () {
-                    prev();
+                    next();
                     return *this;
                 }
                 /**
@@ -293,7 +286,7 @@ class Graph {
                  */
                 edge_iterator operator -- (int) {
                     edge_iterator temp = *this;
-                    prev();
+                    next();
                     return temp;
                 }
 
