@@ -43,6 +43,11 @@ class Graph {
         typedef std::size_t edges_size_type;
         typedef set<edge_descriptor> edge_set;
 
+
+        friend ostream& operator << (ostream& lhs, const edge_descriptor& rhs){
+            return lhs << "(" << rhs.first << "," << rhs.second << ")"; }
+
+
          // ------------
         // vertex_iterator class
         // ------------
@@ -208,8 +213,8 @@ class Graph {
                  * @return void
                  */
                 void next() {
-                    if((unsigned int)_i >= _g->_g.size()) {
-                        _e = _g->_g[_g->_g.size()-1].end();
+                    if((unsigned int)_i == _g->_g.size()-1 && (_e == _g->_g[_g->_g.size()-1].end())) { //|| _e == --_g->_g[_g->_g.size()-1].end())) {
+                        return; //_e = _g->_g[_g->_g.size()-1].end();
                     }else if((_e != _g->_g[_i].end())) {
                         ++_e;
                         if((_e == _g->_g[_i].end())) next();
@@ -260,6 +265,10 @@ class Graph {
                     next();
                     return temp;
                 }
+
+                // edge_descriptor& operator -> () const {
+                //     return *_e;}
+
                 /**
                  * Pre-decrement on iterator.
                  * @return reference to self (*this)
@@ -352,7 +361,10 @@ class Graph {
             unsigned int i = 0;
             while(g._g[i].empty() && i < g._g.size()) { i++; }
             edge_iterator b(&g, i, g._g[i].begin());
-            edge_iterator e(&g, g._g.size(), g._g[g._g.size()-1].end());
+            edge_iterator e(&g, g._g.size()-1, g._g[g._g.size()-1].end());
+            if(g._numEdges == 0){
+                return make_pair(e, e);
+            }
             return std::make_pair(b, e);}
 
         // ---------
