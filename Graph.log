@@ -1,0 +1,108 @@
+commit 89386145c0dd62e53f37fcd136e0e2e21f7ccc72
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Aug 4 15:22:09 2014 -0500
+
+    pushing newly ran doxygen stuff.
+
+commit ee6d265efafd7d06f5f7bd70d5bb79a7df56bcd3
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Aug 4 15:17:06 2014 -0500
+
+    finished up the small bugs on the iterators. closes #23 closes #24 closes #25.
+
+commit a9a2518b6f3c8cf38394e7837fdada69ef77b9dd
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Fri Aug 1 16:02:57 2014 -0500
+
+    fixed the cout for pairs
+
+commit dff3815f70c82ed364186b5e66ef34a58e7d727e
+Author: Colin Murray <tashar@cs.utexas.edu>
+Date:   Fri Aug 1 13:32:42 2014 -0500
+
+    added decrement on edge_iterator, irrelivent though since boost is apprently only a forward iterator
+
+commit 88e26ba8a3c85f3d9f401fe4324551c4c63de542
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Fri Aug 1 12:49:57 2014 -0500
+
+    fixed a couple things to pass other people's tests.
+
+commit 3507c106877a9e7bcf57252d4e71b8dd4b6fff62
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Wed Jul 30 19:02:14 2014 -0500
+
+    finished documentation. basically done. closes #22.
+
+commit 9c27579864c6d5f0c9a6155e15aa009f0becfe8a
+Merge: 2ab3ed4 1d69ae1
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Wed Jul 30 18:59:43 2014 -0500
+
+    Merge branch 'master' of https://github.com/mrjeremyt/cs378-graph
+
+commit 2ab3ed46257817abe91d642eb0d91b768c136d35
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Wed Jul 30 18:59:37 2014 -0500
+
+    added documentations
+
+commit 1d69ae1f29d4f57adc50f9eb6496fa661f01eafc
+Author: Colin Murray <tashar@cs.utexas.edu>
+Date:   Wed Jul 30 18:59:35 2014 -0500
+
+    added doccumentation for iterators
+
+commit 47f94efeae9a48d533f0934a762808a583f8af2b
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Wed Jul 30 18:40:00 2014 -0500
+
+    got test files done. added to public test repo. correct file names in local. about to document .h. closes #19.
+
+commit ae3529f42fbf7bc7de799b41c1751bf72eda6ae5
+Author: Colin Murray <tashar@cs.utexas.edu>
+Date:   Wed Jul 30 18:24:17 2014 -0500
+
+    all tests passing, fixes #2, fixes #8, fixes #9, fixes #16, fixes #17, fixes #18, fixes #20
+
+commit cec43172406b71e0101b35a1be9715a7bc958203
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Wed Jul 30 16:14:24 2014 -0500
+
+    done with all tests. they all pass for Boost. Next step is to re-intorduce our Graph implementation to the mix. closes #5 closes #7 closes #13 closes #14 closes #15.
+
+commit 70ce72633ab7a1d274cadcab2866f4b17d826279
+Author: Colin Murray <tashar@cs.utexas.edu>
+Date:   Tue Jul 29 21:47:58 2014 -0500
+
+    added add_edge, add_vertex, vertex and edge
+
+commit 4cc417f5dca3873cef360996b3faa6d0e4e13288
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Tue Jul 29 18:56:48 2014 -0500
+
+    updating the test
+
+commit 314b5568db87652e23df4f35e5c06448574784a2
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Jul 28 15:16:28 2014 -0500
+
+    typedef'd all the typedefs for each test so that it's 1 line. No grader yet so can't add them. closes #4
+
+commit e7217940042f4f1fc1573c4d63e158ba16a599aa
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Jul 28 15:15:26 2014 -0500
+
+    typedef'd all the typedefs for each test so that it's 1 line. No grader yet so can't add them.
+
+commit b081827c07a8fc0c82fadb92a0c3dc4d96c7163a
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Jul 28 15:09:30 2014 -0500
+
+    Ran TestGraph for the first time. Got expected results. Closes #1 closes #3 closes #11 closes #12 closes #6.
+
+commit 2bde0e821ed9ea0d0ec0d4991ff0a671de6da75e
+Author: Jeremy Thompson <jthompson2214@gmail.com>
+Date:   Mon Jul 28 14:32:54 2014 -0500
+
+    Initial commit
