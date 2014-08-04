@@ -51,8 +51,6 @@ class Graph {
         typedef set<edge_descriptor> edge_set;
 
 
-
-
          // ------------
         // vertex_iterator class
         // ------------
