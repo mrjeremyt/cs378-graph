@@ -117,6 +117,8 @@ Public Member Functions</h2></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a78ad5f989e97a05d04371f6dd4f46445">operator++</a> (int)</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a9b59a06ba69715e463a37afcac9f7ee5">operator--</a> ()</td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a583936e68216cee8146dad4fa18f51ca">operator--</a> (int)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a7a82d1afcd49e0defe917f171934c276">operator+=</a> (difference_type d)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a6595f9a840e445d457d544a94957828e">operator-=</a> (difference_type d)</td></tr>
 <tr><td colspan="2"><h2><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph.html">Graph</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a6a71311a8af00cad7d15aabef44d3550">_g</a></td></tr>
@@ -124,6 +126,8 @@ Private Attributes</h2></td></tr>
 <tr><td colspan="2"><h2><a name="friends"></a>
 Friends</h2></td></tr>
 <tr><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a6bb0446817568dc65a765ae027d95306">operator==</a> (const <a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> &amp;rhs, const <a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> &amp;lhs)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#a4274bad156529dd9c10d3b8fe032212d">operator+</a> (<a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> lhs, difference_type rhs)</td></tr>
+<tr><td class="memItemLeft" align="right" valign="top"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classGraph_1_1vertex__iterator.html#ae83a65c3618bbe7e482e15535c39af43">operator-</a> (<a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> lhs, difference_type rhs)</td></tr>
 </table>
 <hr/><h2>Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a91c76cd1d1d056edcce2e15add4b20e7"></a><!-- doxytag: member="Graph::vertex_iterator::vertex_iterator" ref="a91c76cd1d1d056edcce2e15add4b20e7" args="(Graph *g, const vertex_descriptor &amp;i)" -->
@@ -217,6 +221,24 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a7a82d1afcd49e0defe917f171934c276"></a><!-- doxytag: member="Graph::vertex_iterator::operator+=" ref="a7a82d1afcd49e0defe917f171934c276" args="(difference_type d)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&amp; Graph::vertex_iterator::operator+= </td>
+          <td>(</td>
+          <td class="paramtype">difference_type&#160;</td>
+          <td class="paramname"><em>d</em></td><td>)</td>
+          <td><code> [inline]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>+= operator </p>
+
+</div>
+</div>
 <a class="anchor" id="a9b59a06ba69715e463a37afcac9f7ee5"></a><!-- doxytag: member="Graph::vertex_iterator::operator&#45;&#45;" ref="a9b59a06ba69715e463a37afcac9f7ee5" args="()" -->
 <div class="memitem">
 <div class="memproto">
@@ -254,7 +276,81 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a6595f9a840e445d457d544a94957828e"></a><!-- doxytag: member="Graph::vertex_iterator::operator&#45;=" ref="a6595f9a840e445d457d544a94957828e" args="(difference_type d)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&amp; Graph::vertex_iterator::operator-= </td>
+          <td>(</td>
+          <td class="paramtype">difference_type&#160;</td>
+          <td class="paramname"><em>d</em></td><td>)</td>
+          <td><code> [inline]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>-= operator </p>
+
+</div>
+</div>
 <hr/><h2>Friends And Related Function Documentation</h2>
+<a class="anchor" id="a4274bad156529dd9c10d3b8fe032212d"></a><!-- doxytag: member="Graph::vertex_iterator::operator+" ref="a4274bad156529dd9c10d3b8fe032212d" args="(vertex_iterator lhs, difference_type rhs)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> operator+ </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td>
+          <td class="paramname"><em>lhs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">difference_type&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td><code> [friend]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>plus operator, calls the += of the adjacency list </p>
+
+</div>
+</div>
+<a class="anchor" id="ae83a65c3618bbe7e482e15535c39af43"></a><!-- doxytag: member="Graph::vertex_iterator::operator&#45;" ref="ae83a65c3618bbe7e482e15535c39af43" args="(vertex_iterator lhs, difference_type rhs)" -->
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a> operator- </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classGraph_1_1vertex__iterator.html">vertex_iterator</a>&#160;</td>
+          <td class="paramname"><em>lhs</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">difference_type&#160;</td>
+          <td class="paramname"><em>rhs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td><code> [friend]</code></td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+<p>difference operator, calls the -= operator of the adjacency list </p>
+
+</div>
+</div>
 <a class="anchor" id="a6bb0446817568dc65a765ae027d95306"></a><!-- doxytag: member="Graph::vertex_iterator::operator==" ref="a6bb0446817568dc65a765ae027d95306" args="(const vertex_iterator &amp;rhs, const vertex_iterator &amp;lhs)" -->
 <div class="memitem">
 <div class="memproto">
@@ -339,7 +435,7 @@ Friends</h2></td></tr>
 
 
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 30 2014 19:01:26 for My Project by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 4 2014 15:18:26 for My Project by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.7.6.1
 </small></address>
