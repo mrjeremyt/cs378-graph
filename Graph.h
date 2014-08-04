@@ -24,7 +24,9 @@
 
 using namespace std;
 using std::rel_ops::operator!=;
-
+using std::rel_ops::operator<=;
+using std::rel_ops::operator>;
+using std::rel_ops::operator>=;
 
 ostream& operator << (ostream& lhs, const pair<int, int>& rhs){
     return lhs << "(" << rhs.first << "," << rhs.second << ")"; }
@@ -54,7 +56,7 @@ class Graph {
          // ------------
         // vertex_iterator class
         // ------------
-        class vertex_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
+        class vertex_iterator : public iterator<random_access_iterator_tag, vertex_descriptor>
         {
             public:
                 /**
@@ -66,6 +68,28 @@ class Graph {
                 friend bool operator == (const vertex_iterator& rhs, const vertex_iterator& lhs) {
                     return (rhs._g == lhs._g) && (rhs._i == lhs._i);
                 }
+
+                // ----------
+                // operator +
+                // ----------
+
+                /**
+                 * plus operator, calls the += of the adjacency list
+                 */
+                friend vertex_iterator operator + (vertex_iterator lhs, difference_type rhs) {
+                    return lhs += rhs;}
+
+                // ----------
+                // operator -
+                // ----------
+
+                /**
+                 * difference operator, calls the -= operator of the adjacency list
+                 */
+                friend vertex_iterator operator - (vertex_iterator lhs, difference_type rhs) {
+                    return lhs -= rhs;}
+
+                    
             private:
                 Graph* _g;
                 vertex_descriptor _i;
@@ -121,6 +145,31 @@ class Graph {
                     return temp;
                 }
 
+                // -----------
+                // operator +=
+                // -----------
+
+                /**
+                 * += operator
+                 */
+                vertex_iterator& operator += (difference_type d) {
+                    _i += d;
+                    return *this;
+                }
+
+                // -----------
+                // operator -=
+                // -----------
+
+                /**
+                 * -= operator
+                 */
+                vertex_iterator& operator -= (difference_type d) {
+                    _i -= d;
+                    return *this;
+                }
+
+
         };
 
         // ------------
@@ -159,7 +208,7 @@ class Graph {
                     return (*_i).second;
                 }
                 /**
-                 * Pre-increment on iterator.
+                 * Pre-increment on adjacency_iterator.
                  * @return reference to self (*this)
                  */
                 adjacency_iterator& operator ++ () {
@@ -167,7 +216,7 @@ class Graph {
                     return *this;
                 }
                 /**
-                 * Post-increment on iterator.
+                 * Post-increment on adjacency_iterator.
                  * @return copy of this iterator before increment
                  */
                 adjacency_iterator operator ++ (int) {
@@ -176,29 +225,21 @@ class Graph {
                     return temp;
                 }
                 /**
-                 * Pre-decrement on iterator.
+                 * Pre-decrement on adjacency_iterator.
                  * @return reference to self (*this)
                  */
                 adjacency_iterator& operator -- () {
                     --_i;
                     return *this;
                 }
-                /**
-                 * Post-decrement on iterator.
-                 * @return copy of this iterator before decrement
-                 */
-                adjacency_iterator operator -- (int) {
-                    adjacency_iterator temp = *this;
-                    --_i;
-                    return temp;
-                }
+
 
         };
 
         // ------------
         // edge_iterator class
         // ------------
-        class edge_iterator : public iterator<bidirectional_iterator_tag, edge_descriptor>
+        class edge_iterator : public iterator<forward_iterator_tag, edge_descriptor>
         {
             public:
                 /**
@@ -248,11 +289,11 @@ class Graph {
                  * Dereferences edge_iterator
                  * @return const reference to an edge_descriptor
                  */
-                const edge_descriptor& operator * () {
+                edge_descriptor operator * () {
                     return *_e;
                 }
                 /**
-                 * Pre-increment on iterator.
+                 * Pre-increment on edge iterator.
                  * @return reference to self (*this)
                  */
                 edge_iterator& operator ++ () {
@@ -260,7 +301,7 @@ class Graph {
                     return *this;
                 }
                 /**
-                 * Post-increment on iterator.
+                 * Post-increment on edge iterator.
                  * @return copy of this iterator before increment
                  */
                 edge_iterator operator ++ (int) {
@@ -269,11 +310,8 @@ class Graph {
                     return temp;
                 }
 
-                // edge_descriptor& operator -> () const {
-                //     return *_e;}
-
                 /**
-                 * Pre-decrement on iterator.
+                 * Pre-decrement on edge iterator.
                  * @return reference to self (*this)
                  */
                 edge_iterator& operator -- () {
@@ -281,7 +319,7 @@ class Graph {
                     return *this;
                 }
                 /**
-                 * Post-decrement on iterator.
+                 * Post-decrement on edge iterator.
                  * @return copy of this iterator before decrement
                  */
                 edge_iterator operator -- (int) {
@@ -361,6 +399,12 @@ class Graph {
          * @return returns a pair of edge_iterators for the beginning and the end
          */
         friend std::pair<edge_iterator, edge_iterator> edges (Graph& g) {
+            if(g._numEdges == 0 && g._g.size() == 0){
+                edge_set s;
+                edge_iterator c(&g, 0, s.begin());
+                edge_iterator d(&g, 0, s.begin());
+                return make_pair(c,d);
+            }
             unsigned int i = 0;
             while(g._g[i].empty() && i < g._g.size()) { i++; }
             edge_iterator b(&g, i, g._g[i].begin());
