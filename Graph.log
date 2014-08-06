@@ -1,3 +1,21 @@
+commit 3dd34d91a9fe9b965f8b88d54a5293f2ef907fe0
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Tue Aug 5 23:13:33 2014 -0500
+
+    had to fix a couple bugs brought up by running other people's  tests.
+
+commit 45f6302b061869c2f35de14a64be1ceda6231248
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Aug 4 15:26:00 2014 -0500
+
+    actual probable last commit. closes #10
+
+commit c6e5750927c54550b6f37250dbc1559eea23dc40
+Author: mrjeremyt <jthompson2214@gmail.com>
+Date:   Mon Aug 4 15:23:50 2014 -0500
+
+    probably last commit. adding log.
+
 commit a9abeeafabfe7da5933488ebdb583fe434b6e8ae
 Author: mrjeremyt <jthompson2214@gmail.com>
 Date:   Mon Aug 4 15:23:22 2014 -0500
