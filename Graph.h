@@ -54,7 +54,7 @@ class Graph {
          // ------------
         // vertex_iterator class
         // ------------
-        class vertex_iterator : public iterator<random_access_iterator_tag, vertex_descriptor>
+        class vertex_iterator : public iterator<bidirectional_iterator_tag, vertex_descriptor>
         {
             public:
                 /**
@@ -341,7 +341,11 @@ class Graph {
          */
         friend std::pair<edge_descriptor, bool> add_edge (vertex_descriptor a, vertex_descriptor b, Graph& g) {
             edge_descriptor e(a, b);
-            if(g._g[a].find(e) == g._g[a].end()){  g._g[a].insert(e); ++g._numEdges; return make_pair(e, true); }
+	    vertex_descriptor z = max(a,b) + 1;
+            bool bl = false;
+	    if((unsigned)z > num_vertices(g)){ while((unsigned)z > num_vertices(g)){ add_vertex(g);} bl = true; }
+	    if(bl){ g._g[a].insert(e); ++g._numEdges; return make_pair(e,true); } 
+            else if(g._g[a].find(e) == g._g[a].end()){  g._g[a].insert(e); ++g._numEdges; return make_pair(e, true); }
             else return make_pair(e, false);
         }
 
@@ -385,6 +389,7 @@ class Graph {
          */
         friend std::pair<edge_descriptor, bool> edge (vertex_descriptor a, vertex_descriptor b, const Graph& g) {
             edge_descriptor e(a, b);
+	    if((unsigned)a > num_vertices(g) ||(unsigned)b > num_vertices(g)){ return make_pair(e, false); }
             return make_pair(e, g._g[a].find(e) != g._g[a].end());
         }
 
